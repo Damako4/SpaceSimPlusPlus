@@ -1,0 +1,3 @@
+/home/damir/Documents/FinalGame/cmake-build-debug/CMakeFiles/FinalGame.dir
+/home/damir/Documents/FinalGame/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/damir/Documents/FinalGame/cmake-build-debug/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,11 @@
+{
+"rules": [
+{
+"primary-output": "CMakeFiles/FinalGame.dir/src/common/text2D.cpp.o",
+"requires": [
+]
+}
+],
+"version": 0,
+"revision": 0
+}

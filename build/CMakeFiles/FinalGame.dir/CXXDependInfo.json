@@ -1,0 +1,91 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "GNU",
+	"compiler-simulate-id" : "",
+	"config" : "Debug",
+	"cxx-modules" : {},
+	"database-info" : null,
+	"dir-cur-bld" : "/home/damir/Documents/FinalGame/build",
+	"dir-cur-src" : "/home/damir/Documents/FinalGame",
+	"dir-top-bld" : "/home/damir/Documents/FinalGame/build",
+	"dir-top-src" : "/home/damir/Documents/FinalGame",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : 
+	[
+		"/home/damir/Documents/FinalGame/FinalGame",
+		"/home/damir/Documents/FinalGame/include"
+	],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "/home/damir/Documents/FinalGame/build/CMakeFiles/FinalGame.dir",
+	"sources" : 
+	{
+		"CMakeFiles/FinalGame.dir/src/common/common.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/common.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/controls.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/controls.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/error.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/error.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/loadShader.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/loadShader.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/objloader.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/objloader.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/physics.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/physics.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/planets.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/planets.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/raycast.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/raycast.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/tangentspace.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/tangentspace.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/text2D.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/text2D.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/vboindexer.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/vboindexer.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/common/world.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/common/world.cpp"
+		},
+		"CMakeFiles/FinalGame.dir/src/main.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/damir/Documents/FinalGame/src/main.cpp"
+		}
+	}
+}
