@@ -23,7 +23,7 @@ Planet::Planet(GLuint progID, const std::string &name, TextureInfo info, glm::ve
     // Store REAL-WORLD values directly (no scaling in constructor)
     position_modelSpace = glm::dvec3(position);  // Real-world position in meters
     this->velocity = glm::dvec3(velocity);       // Real-world velocity in m/s
-    acceleration = acceleration;
+    this->acceleration = glm::dvec3(acceleration);
     mass = planetMass;
     radius = planetRadius;
 
@@ -43,14 +43,14 @@ Planet::Planet(GLuint progID, const std::string &name, TextureInfo info, glm::ve
 
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
-    std::vector<glm::vec3> tangents;
     std::vector<glm::vec2> uv;
-    std::vector<unsigned int> ind;
+    // Fill the member 'indices' and the vertex arrays
     generateSphereVertices(1.0f, 36, 18, indices, vertices, normals, uv);
-    
+
     glGenBuffers(1, &elementBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), ind.data(), GL_STATIC_DRAW);
+    // Upload the actual indices stored in the object's member 'indices'
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -64,7 +64,7 @@ Planet::Planet(GLuint progID, const std::string &name, TextureInfo info, glm::ve
     glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
     glBufferData(GL_ARRAY_BUFFER, uv.size() * sizeof(glm::vec2), uv.data(), GL_STATIC_DRAW);
 
-    indices = ind;
+    // 'indices' is already populated by generateSphereVertices via the member reference
 }
 
 void Planet::generateSphereVertices(float radius, int sectorCount, int stackCount,
@@ -176,8 +176,8 @@ glm::vec3 Planet::getPlanetScreenCoords(ControlState& state) {
     glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos) / clipSpacePos.w;
 
     // Convert NDC to window coordinates
-    float x = (ndcSpacePos.x + 1.0f) * 0.5f * WIDTH * 2;  // Assuming WIDTH is defined globally
-    float y = (ndcSpacePos.y) * 0.5f * HEIGHT * 2; // Assuming HEIGHT is defined globally
+    float x = (ndcSpacePos.x + 1.0f) * 0.5f * static_cast<float>(WIDTH);
+    float y = (ndcSpacePos.y + 1.0f) * 0.5f * static_cast<float>(HEIGHT);
 
     return glm::vec3(x, y, ndcSpacePos.z);
 }

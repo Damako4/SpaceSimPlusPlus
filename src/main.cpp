@@ -151,7 +151,7 @@ int main()
 
 	auto sunMass = 1.9885e30f;
 	auto sunPosition = vec3(0.0f, 0.0f, 0.0f);
-	auto sunVelocity = -earthVelocity * (earth.getMass() / sunMass);
+	auto sunVelocity = vec3(0.0f, 0.0f, 0.0f);
 	info.useTexture = false;
 	info.color = glm::vec3(0.0f, 1.0f, 0.0f);
 	Planet sun = Planet(programID, "Sun", info, sunPosition, sunVelocity, glm::vec3(0.0f), 2.0f, sunMass);
@@ -219,9 +219,6 @@ int main()
 		{
 			glm::vec3 scaledPositionModelSpace = planet.getScaledPosition();
 
-			if (planet.id == 1) {
-				glUniform3fv(lightPositionID, 1, &scaledPositionModelSpace[0]);
-			}
 			glm::mat4 ObjectModelMatrix = glm::mat4(1.0f);									   // Reset to identity
 			ObjectModelMatrix = glm::translate(ObjectModelMatrix, scaledPositionModelSpace); // Translate to planet's position
 			ObjectModelMatrix = glm::scale(ObjectModelMatrix, glm::vec3(planet.getRadius()));	   // Scale planet based on time for demonstration
