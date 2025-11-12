@@ -1,18 +1,18 @@
 #ifndef PLANETS_H
 #define PLANETS_H
 
-#include "structs.h"
+#include <structs.h>
 #include <string>
 
 class Planet : public Object {
 	public:
-		Planet(GLuint programID, const std::string &name, TextureInfo info, glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration, float planetRadius, float planetMass);
+	Planet(const std::string &name, TextureInfo info, glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration, float planetRadius, float planetMass);
         std::string name;
 	
-		void draw();
-		float getRadius();
-		float getMass();
-		glm::vec3 getPlanetScreenCoords(ControlState& state);
+		void render();
+		float getRadius() const;
+		float getMass() const;
+		glm::vec3 getPlanetScreenCoords() const;
 		glm::vec3 getScaledPosition() const;
 
 	private:
@@ -24,7 +24,5 @@ class Planet : public Object {
                             std::vector<glm::vec3>& normals,
                             std::vector<glm::vec2>& uv);
 };
-
-
 
 #endif //PLANETS_H

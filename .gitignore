@@ -1,0 +1,100 @@
+############################
+# OS junk
+############################
+.DS_Store
+Thumbs.db
+
+############################
+# Editor/IDE
+############################
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+############################
+# C/C++ build artifacts
+############################
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.pdb
+*.dSYM/
+*.exp
+*.ilk
+*.pch
+
+# Coverage / profiling
+*.gcno
+*.gcda
+*.gcov
+*.profraw
+*.profdata
+
+############################
+# Binaries
+############################
+*.exe
+*.out
+*.app
+*.bin
+FinalGame
+
+############################
+# CMake / build directories
+############################
+build/
+build-*/
+cmake-build-*/
+
+# CMake generated files (anywhere)
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+**/install_manifest.txt
+**/Testing/
+**/*.dir/
+
+# CMake FetchContent / dependencies in build trees
+**/_deps/
+**/gladsources/
+**/glad_cmake/
+**/pkgRedirects/
+**/Progress/
+
+############################
+# Logs and caches
+############################
+*.log
+*.tlog
+*.cache
+
+############################
+# Archives
+############################
+*.zip
+*.7z
+*.tar
+*.gz
+*.bz2
+*.rar
+
+############################
+# Tool binaries (keep source configs)
+############################
+tools/CBFG/*.exe
+tools/CBFG/*.chm
+
+# Keep compile_commands.json (useful for tooling)
+#!compile_commands.json
+

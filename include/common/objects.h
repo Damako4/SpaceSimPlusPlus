@@ -1,12 +1,8 @@
-//
-// Created by damir on 10/30/24.
-//
-
 #ifndef OBJECTS_H
 #define OBJECTS_H
 #include <string>
 
-#include "structs.h"
+#include <structs.h>
 
 Object initObject(const std::string& filepath, const std::string& texturePath, GLuint programID, GLuint textureSamplerID, const std::string& name, glm::vec3 &xyz);
 void drawObject(const Object& object);

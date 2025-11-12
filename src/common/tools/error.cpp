@@ -1,12 +1,9 @@
-//
-// Created by damir on 10/30/24.
-//
-
-#include <common/common.hpp>
-#include "common/error.h"
-
 #include <iostream>
 #include <string>
+
+#include <common.hpp>
+
+#include <tools/error.h>
 
 // Map OpenGL debug sources to human-readable strings
 std::string getSourceString(GLenum source) {

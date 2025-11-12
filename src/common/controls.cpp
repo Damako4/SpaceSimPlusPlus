@@ -1,15 +1,16 @@
-#include "common/controls.h"
-
-#include <glm/detail/type_mat.hpp>
-#include <glm/detail/type_mat4x4.hpp>
-#include <glm/detail/type_vec.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <structs.h>
 #include <unordered_map>
 #include <thread>
 #include <vector>
 #include <iostream>
-#include <common/planets.h>
+#include <glm/detail/type_mat.hpp>
+#include <glm/detail/type_mat4x4.hpp>
+#include <glm/detail/type_vec.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <structs.h>
+
+#include <controls.h>
+#include <planets.h>
 
 using namespace glm;
 

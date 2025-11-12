@@ -1,14 +1,10 @@
-//
-// Created by damir on 10/28/24.
-//
-
-#include "common/objloader.h"
-
 #include <cstdio>
 #include <cstring>
 #include <string>
 #include <glm/detail/type_vec2.hpp>
 #include <glm/detail/type_vec3.hpp>
+
+#include <tools/objloader.h>
 
 bool loadOBJ(std::string fileName, std::vector<glm::vec3> &out_vertices, std::vector<glm::vec2> &out_uvs, std::vector<glm::vec3> &out_normals) {
 	std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;

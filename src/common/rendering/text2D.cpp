@@ -1,19 +1,13 @@
-//
-// Created by damir on 10/29/24.
-//
-
-#include "common/text2D.h"
-
 #include <cstring>
-#include <soil2/SOIL2.h>
-
 #include <vector>
-#include <glad/glad.h>
 #include <glm/detail/type_vec.hpp>
 #include <glm/detail/type_vec2.hpp>
+#include <soil2/SOIL2.h>
 
-#include "loadShader.hpp"
-#include "common/common.hpp"
+#include <common.hpp>
+
+#include <rendering/text2D.h>
+#include <tools/loadShader.hpp>
 
 unsigned int textTextureID;
 unsigned int textVertexBufferID;

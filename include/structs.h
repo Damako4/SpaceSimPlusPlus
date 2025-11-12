@@ -1,9 +1,6 @@
-//
-// Created by damir on 10/30/24.
-//
-
 #ifndef STRUCTS_H
 #define STRUCTS_H
+
 #include <glad/glad.h>
 #include <glm/detail/type_vec.hpp>
 #include <glm/detail/type_vec3.hpp>
@@ -12,9 +9,7 @@
 #include <string>
 
 class Planet;
-
-// Physics constants
-const float G = 1.0f;  // Gravitational constant
+class Axis;
 
 enum class ViewMode {
 	FREE,
@@ -41,6 +36,7 @@ typedef struct {
 	int id;
 	std::string name;
 	std::vector<unsigned int> indices;
+	GLuint mvpID;
 	GLuint VertexArrayID;
 	GLuint elementBuffer;
 	GLuint vertexBuffer;
@@ -59,12 +55,19 @@ struct ControlState {
 	bool gridVisible;
 	std::vector<Planet>& planets;
 	Planet* selectedPlanet;
+	Axis* axisHandler;
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
+
+	GLuint programID;
+	GLuint lineProgramID;
+	GLuint textProgramID;
 
 	ControlState(std::vector<Planet>& planet_ref) : planets(planet_ref) {
 		
 	}
 };
+
+extern ControlState state;
 
 #endif //STRUCTS_H

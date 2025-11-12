@@ -1,10 +1,10 @@
-#include <common/common.hpp>
-#include <common/physics.h>
+#include <common.hpp>
+#include <physics.h>
 #include <structs.h>
 #include <glm/vec3.hpp>
 #include <glm/glm.hpp>
 #include <iostream>
-#include <common/planets.h>
+#include <planets.h>
 
 // Constants for stable orbital motion
 const double gravitationalConstant = 6.674e-11;

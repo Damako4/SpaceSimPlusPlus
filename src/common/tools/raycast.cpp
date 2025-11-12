@@ -1,20 +1,27 @@
-#include "common/raycast.h"
 #include <iostream>
+#include <thread>
 #include <glm/matrix.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <loadShader.hpp>
-#include <thread>
-#include "structs.h"
-#include <common/planets.h>
+
+#include <structs.h>
+
+#include <tools/raycast.h>
+#include <tools/loadShader.hpp>
+#include <planets.h>
 
 GLuint pickProgramID = 0;
 GLuint pickColorID = -1;
 GLuint pickMatrixID = -1;
+// Dedicated VAO for the picking pass (Core profile requires a VAO bound)
+static GLuint pickVAO = 0;
 
 void initRaycastingShader() {
     pickProgramID = LoadShaders("../src/shaders/raycasting/rayVertexShader.glsl", "../src/shaders/raycasting/rayFragmentShader.glsl");
     pickColorID = glGetUniformLocation(pickProgramID, "pickColor");
     pickMatrixID = glGetUniformLocation(pickProgramID, "MVP");
+    if (pickVAO == 0) {
+        glGenVertexArrays(1, &pickVAO);
+    }
 }
 
 void raycast(GLFWwindow *window, int button, int action, int mods)
@@ -27,6 +34,7 @@ void raycast(GLFWwindow *window, int button, int action, int mods)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(pickProgramID);
 
+        glBindVertexArray(pickVAO);
         glEnableVertexAttribArray(0);
 
         for (Planet &planet : state->planets)
@@ -53,6 +61,7 @@ void raycast(GLFWwindow *window, int button, int action, int mods)
         }
 
         glDisableVertexAttribArray(0);
+        glBindVertexArray(0);
 
         glFlush();
         glFinish();

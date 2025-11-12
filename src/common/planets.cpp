@@ -1,12 +1,17 @@
-#include <string>
-#include <common/planets.h>
-#include <structs.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/glm.hpp>
 #include <cmath>
-#include <common/vboindexer.h>
-#include <common/common.hpp>
 #include <iostream>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <common.hpp>
+#include <structs.h>
+
+#include <string>
+#include <planets.h>
+#include <tools/vboindexer.h>
+#include <controls.h>
+#include <tools/loadShader.hpp>
 
 /*
 TODO
@@ -14,15 +19,14 @@ OPTIMIZE TO BE ABLE TO COPY PLANET DATA
 SLOW TO GENERATE VERTICES FOR EVERY PLANET MADE
 */
 
-int planetID = 1;
+static int planetID = 1;
 
-Planet::Planet(GLuint progID, const std::string &name, TextureInfo info, glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration, float planetRadius, float planetMass) {
+Planet::Planet(const std::string &name, TextureInfo info, glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration, float planetRadius, float planetMass) {
     id = planetID++;
     if (planetID == 1) planetID = 1;
-    programID = progID;
-    // Store REAL-WORLD values directly (no scaling in constructor)
-    position_modelSpace = glm::dvec3(position);  // Real-world position in meters
-    this->velocity = glm::dvec3(velocity);       // Real-world velocity in m/s
+    programID = state.programID;
+    position_modelSpace = glm::dvec3(position);  // Real-world position
+    this->velocity = glm::dvec3(velocity); // Real-world velocity
     this->acceleration = glm::dvec3(acceleration);
     mass = planetMass;
     radius = planetRadius;
@@ -34,9 +38,8 @@ Planet::Planet(GLuint progID, const std::string &name, TextureInfo info, glm::ve
     if (!info.useTexture) {
         color = info.color;
     } else {
-        color = glm::vec3(1.0f, 1.0f, 1.0f); // Default white for textured objects
+        color = glm::vec3(1.0f, 1.0f, 1.0f); // Default white
     }
-    
 
     glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
@@ -44,12 +47,10 @@ Planet::Planet(GLuint progID, const std::string &name, TextureInfo info, glm::ve
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> uv;
-    // Fill the member 'indices' and the vertex arrays
     generateSphereVertices(1.0f, 36, 18, indices, vertices, normals, uv);
 
     glGenBuffers(1, &elementBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-    // Upload the actual indices stored in the object's member 'indices'
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glGenBuffers(1, &vertexBuffer);
@@ -64,7 +65,8 @@ Planet::Planet(GLuint progID, const std::string &name, TextureInfo info, glm::ve
     glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
     glBufferData(GL_ARRAY_BUFFER, uv.size() * sizeof(glm::vec2), uv.data(), GL_STATIC_DRAW);
 
-    // 'indices' is already populated by generateSphereVertices via the member reference
+    glBindVertexArray(0);
+
 }
 
 void Planet::generateSphereVertices(float radius, int sectorCount, int stackCount,
@@ -130,10 +132,9 @@ void Planet::generateSphereVertices(float radius, int sectorCount, int stackCoun
     indexVBO(pre_vertices, pre_uv, pre_normals, indices, vertices, uv, normals);
 }
 
-void Planet::draw() {
+void Planet::render() {
 	glUseProgram(programID);
 
-	// Enable alpha transparency
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -168,10 +169,12 @@ void Planet::draw() {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(2);
+
+    glBindVertexArray(0);
 }
 
 
-glm::vec3 Planet::getPlanetScreenCoords(ControlState& state) {
+glm::vec3 Planet::getPlanetScreenCoords() const {
     glm::vec4 clipSpacePos = state.ProjectionMatrix * state.ViewMatrix * glm::vec4(getScaledPosition(), 1.0f);
     glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos) / clipSpacePos.w;
 
@@ -183,14 +186,13 @@ glm::vec3 Planet::getPlanetScreenCoords(ControlState& state) {
 }
 
 glm::vec3 Planet::getScaledPosition() const {
-    // Convert from real-world meters to OpenGL units for rendering
     return glm::vec3(position_modelSpace / SCALE_FACTOR);
 }
 
-float Planet::getMass() {
+float Planet::getMass() const {
     return mass;
 }
 
-float Planet::getRadius() {
+float Planet::getRadius() const {
     return radius;
 }

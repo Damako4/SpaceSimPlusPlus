@@ -1,12 +1,8 @@
-//
-// Created by damir on 10/26/24.
-//
 #include <cstdio>
 #include <cstdlib>
-#include <common/common.hpp>
 #include <cstring>
 
-
+#include <common/common.hpp>
 
 #define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
 #define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII

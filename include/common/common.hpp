@@ -7,7 +7,7 @@
 #define NEAR_CLIP 0.1f
 #define FAR_CLIP 100.0f
 
-#define SCALE_FACTOR 2.992e10 // Scale down positions for better numerical stability
+#define SCALE_FACTOR 2.992e10
 
 #define GLFW_INCLUDE_NONE
 #include <glad/glad.h>

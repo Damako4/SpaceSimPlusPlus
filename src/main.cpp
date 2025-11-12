@@ -1,25 +1,24 @@
 #include <cstring>
 #include <iostream>
-
-#include "common/common.hpp"
-#include "common/error.h"
-#include "loadShader.hpp"
-#include <glm/gtc/matrix_transform.hpp>
-#include <common/controls.h>
-#include <common/objloader.h>
-#include <common/vboindexer.h>
-#include <soil2/SOIL2.h>
-#include <common/world.h>
-#include <common/objects.h>
-#include <structs.h>
-#include <common/raycast.h>
-
-#include "common/text2D.h"
-#include <common/planets.h>
 #include <thread>
-#include <common/physics.h>
+#include <glm/gtc/matrix_transform.hpp>
 
-using namespace glm;
+#include <common.hpp>
+#include <structs.h>
+
+#include <tools/error.h>
+#include <tools/loadShader.hpp>
+#include <tools/raycast.h>
+#include <rendering/text2D.h>
+#include <controls.h>
+#include <objects.h>
+#include <planets.h>
+#include <physics.h>
+#include <world/axis.h>
+
+// Global state variable definition
+std::vector<Planet> planets;
+ControlState state(planets);
 
 int main()
 {
@@ -33,10 +32,9 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	// Set debug mode
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 
-	GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "Cool Game", nullptr, nullptr);
+	GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "Gravity Sim++", nullptr, nullptr);
 	if (window == nullptr)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -58,7 +56,6 @@ int main()
 	std::cout << "Supported OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 
 	// Used extensions: ARB_texture_view, KHR_debug
-	// Load extensions
 	if constexpr (GL_EXT_texture_compression_s3tc)
 	{
 		std::cout << "Loaded GL_EXT_texture_compression_s3tc extension" << std::endl;
@@ -97,7 +94,6 @@ int main()
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
-	// Cull tris where normal is not facing camera
 	// glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
 
@@ -131,37 +127,36 @@ int main()
 	// TODO: Implement proper transparency!!!
 
 	initText2D("../src/textures/fontmap.tga");
-	initAxis();
-	initWorldGrid();
+	//initWorldGrid();
 	initRaycastingShader();
 
-	std::vector<Planet> planets;
-
-	TextureInfo info;
-
-	auto earthMass = 5.972e24f;
-	auto earthPosition = vec3(1.5e11f, 0.0f, 0.0f);
-	auto earthVelocity = vec3(0.0f, 0.0f, 29780.0f);
-	info.useTexture = true;
-	info.texturePath = "earth.jpg";
-	info.textureSamplerID = glGetUniformLocation(programID, "textureSampler");
-	Planet earth = Planet(programID, "Earth", info, earthPosition, earthVelocity, glm::vec3(0.0f), 0.5f, earthMass);
-	planets.push_back(earth);
-
-
-	auto sunMass = 1.9885e30f;
-	auto sunPosition = vec3(0.0f, 0.0f, 0.0f);
-	auto sunVelocity = vec3(0.0f, 0.0f, 0.0f);
-	info.useTexture = false;
-	info.color = glm::vec3(0.0f, 1.0f, 0.0f);
-	Planet sun = Planet(programID, "Sun", info, sunPosition, sunVelocity, glm::vec3(0.0f), 2.0f, sunMass);
-	planets.push_back(sun);
-
-	ControlState state(planets);
+	// Initialize global state properties
+	state.programID = programID;
 	state.gridVisible = false;
 	state.viewMode = ViewMode::FREE;
 	state.controlMode = ControlMode::VIEW;
 	state.selectedPlanet = nullptr;
+	state.axisHandler = new Axis();
+
+	TextureInfo info;
+
+	auto earthMass = 5.972e24f;
+	auto earthPosition = glm::vec3(1.5e11f, 0.0f, 0.0f);
+	auto earthVelocity = glm::vec3(0.0f, 0.0f, 29780.0f);
+	info.useTexture = true;
+	info.texturePath = "earth.jpg";
+	info.textureSamplerID = glGetUniformLocation(programID, "textureSampler");
+	Planet earth = Planet("Earth", info, earthPosition, earthVelocity, glm::vec3(0.0f), 0.5f, earthMass);
+	planets.push_back(earth);
+
+
+	auto sunMass = 1.9885e30f;
+	auto sunPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+	auto sunVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
+	info.useTexture = false;
+	info.color = glm::vec3(0.0f, 1.0f, 0.0f);
+	Planet sun = Planet("Sun", info, sunPosition, sunVelocity, glm::vec3(0.0f), 2.0f, sunMass);
+	planets.push_back(sun);
 
 	computeMatricesFromInputs(window);
 	glm::mat4 ProjectionMatrix = getProjectionMatrix();
@@ -201,16 +196,7 @@ int main()
 		state.ViewMatrix = ViewMatrix;
 		glfwSetWindowUserPointer(window, &state);
 
-		for (Planet &planet : planets)
-		{
-			if (state.selectedPlanet != nullptr && planet.id == state.selectedPlanet->id)
-			{
-				drawAxis(planet.position_modelSpace, planet.getRadius()*1.5f);
-				
-			}
-		}
-
-		drawWorldGrid(ProjectionMatrix, ViewMatrix, centerOfMass(planets));
+		//drawWorldGrid(ProjectionMatrix, ViewMatrix, centerOfMass(planets));
 
 		glEnable(GL_DEPTH_TEST);
 		glUseProgram(programID);
@@ -231,7 +217,11 @@ int main()
 
 			glUniform3fv(diffuseColorID, 1, &planet.color[0]);
 
-			planet.draw();
+			planet.render();
+
+			if (state.selectedPlanet == &planet && state.axisHandler != nullptr) {
+				state.axisHandler->renderAxis(planet);
+			}
 
 			/*
 			printText2D(planet.name, 
@@ -250,11 +240,13 @@ int main()
 		{
 			modeString += "Orbit Camera";
 		}
+		/*
 		printText2D(modeString, WIDTH * 2 - 500, HEIGHT * 2 - 30, 20);
 		std::string frametimeString = "Frametime : " + std::to_string(frametime);
 		printText2D(frametimeString, 0, HEIGHT * 2 - 30, 30);
 		std::string controlsString = "Controls: C - Free Camera | O - Orbit Camera | G - Move Object | S - Scale Object | V - Toggle Grid";
 		printText2D(controlsString, 10, 10, 20);
+		*/
 
 		glfwSwapBuffers(window);
 

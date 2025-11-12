@@ -1,14 +1,10 @@
-//
-// Created by damir on 10/29/24.
-//
-
-#include "common/vboindexer.h"
-
 #include <cstring>
 #include <map>
 #include <glm/detail/type_vec.hpp>
 #include <glm/detail/type_vec2.hpp>
 #include <glm/detail/type_vec3.hpp>
+
+#include <tools/vboindexer.h>
 
 struct PackedVertex{
 	glm::vec3 position;
