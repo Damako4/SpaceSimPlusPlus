@@ -32,7 +32,6 @@ typedef struct {
 } TextureInfo;
 
 typedef struct {
-	GLuint programID;
 	int id;
 	std::string name;
 	std::vector<unsigned int> indices;

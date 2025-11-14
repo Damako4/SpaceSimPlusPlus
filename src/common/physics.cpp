@@ -7,8 +7,7 @@
 #include <planets.h>
 
 // Constants for stable orbital motion
-const double gravitationalConstant = 6.674e-11;
-const float timeScale = 8640.0f;        // 1 simulation frame = 1 day for visible orbital motion
+const float timeScale = 1000.0f; // 8640.0f;        // 1 simulation frame = 1 day for visible orbital motion
 
 glm::dvec3 calculateForces(std::vector<Planet> planets, Planet target)
 {
@@ -20,7 +19,6 @@ glm::dvec3 calculateForces(std::vector<Planet> planets, Planet target)
             glm::dvec3 r = planet.position_modelSpace - target.position_modelSpace;
             double distance = glm::length(r);
             
-            // CRITICAL: Minimum distance check to prevent collision/infinite forces
             const double MIN_DISTANCE = 1e6; // Minimum separation: 1000 km in real-world units
             if (distance < MIN_DISTANCE) {
                 distance = MIN_DISTANCE;
@@ -28,7 +26,6 @@ glm::dvec3 calculateForces(std::vector<Planet> planets, Planet target)
             
             glm::dvec3 direction = glm::normalize(r);
             
-            // F = G * m1 * m2 / r^2
             double forceMagnitude = gravitationalConstant * target.getMass() * planet.getMass() / (distance * distance);
 
             glm::dvec3 force = forceMagnitude * direction;
@@ -46,11 +43,9 @@ void updatePhysics(std::vector<Planet> &planets, double dt)
     {
         Planet p = old_planets[i];
         
-        // Calculate force and acceleration
         glm::dvec3 force = calculateForces(old_planets, p);
         glm::dvec3 new_acc = force / glm::dvec3(p.getMass());  // a = F/m
         
-        // Use Verlet integration for better stability
         glm::dvec3 new_vel = p.velocity + (p.acceleration + new_acc) * (dt * 0.5);
         glm::dvec3 new_pos = p.position_modelSpace + p.velocity * dt + p.acceleration * (dt * dt * 0.5);
 

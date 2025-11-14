@@ -26,7 +26,6 @@ void initRaycastingShader() {
 
 void raycast(GLFWwindow *window, int button, int action, int mods)
 {
-    ControlState *state = static_cast<ControlState *>(glfwGetWindowUserPointer(window));
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
         // Clear with white (ID 0 = no selection)
@@ -37,11 +36,11 @@ void raycast(GLFWwindow *window, int button, int action, int mods)
         glBindVertexArray(pickVAO);
         glEnableVertexAttribArray(0);
 
-        for (Planet &planet : state->planets)
+        for (Planet &planet : state.planets)
         {
             glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0f), planet.getScaledPosition());
             ModelMatrix = glm::scale(ModelMatrix, glm::vec3(planet.getRadius()));
-            glm::mat4 MVP = state->ProjectionMatrix * state->ViewMatrix * ModelMatrix;
+            glm::mat4 MVP = state.ProjectionMatrix * state.ViewMatrix * ModelMatrix;
 
             glUniformMatrix4fv(pickMatrixID, 1, GL_FALSE, &MVP[0][0]);
 
@@ -94,17 +93,17 @@ void raycast(GLFWwindow *window, int button, int action, int mods)
         
         // Find matching planet
         bool found = false;
-        for (const Planet& planet : state->planets) {
+        for (const Planet& planet : state.planets) {
             if (planet.id == pickedID) {
                 std::cout << "Picked planet ID: " << pickedID << std::endl;
-                state->selectedPlanet = const_cast<Planet*>(&planet);
+                state.selectedPlanet = const_cast<Planet*>(&planet);
                 found = true;
                 break;
             }
         }
         
         if (!found) {
-            state->selectedPlanet = nullptr;
+            state.selectedPlanet = nullptr;
         }
 
         // Wait 500 ms thread sleep

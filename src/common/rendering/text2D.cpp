@@ -14,9 +14,13 @@ unsigned int textVertexBufferID;
 unsigned int textUVBufferID;
 unsigned int textShaderID;
 unsigned int textUniformID;
+unsigned int textVAO;
 
 void initText2D(const char * texturePath) {
 	textTextureID = SOIL_load_OGL_texture(texturePath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y | SOIL_FLAG_POWER_OF_TWO | SOIL_FLAG_MIPMAPS | SOIL_FLAG_COMPRESS_TO_DXT);
+	
+	// Generate VAO and buffers
+	glGenVertexArrays(1, &textVAO);
 	glGenBuffers(1, &textVertexBufferID);
 	glGenBuffers(1, &textUVBufferID);
 
@@ -60,10 +64,19 @@ void printText2D(const std::string& text, int x, int y, int size) {
 		UVs.push_back(uv_up_right);
 		UVs.push_back(uv_down_left);
 	}
+
+	// Bind VAO before setting up vertex attributes
+	glBindVertexArray(textVAO);
+	
 	glBindBuffer(GL_ARRAY_BUFFER, textVertexBufferID);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec2), &vertices[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+
 	glBindBuffer(GL_ARRAY_BUFFER, textUVBufferID);
 	glBufferData(GL_ARRAY_BUFFER, UVs.size() * sizeof(glm::vec2), &UVs[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glUseProgram(textShaderID);
 
@@ -78,22 +91,18 @@ void printText2D(const std::string& text, int x, int y, int size) {
 	glBindTexture(GL_TEXTURE_2D, textTextureID);
 	glUniform1i(textureSamplerID, 0);
 
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, textVertexBufferID);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, textUVBufferID);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	// VAO is already bound with vertex attributes set up
 	glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
 	glDisable(GL_BLEND);
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+
+	// Unbind VAO
+	glBindVertexArray(0);
 
 }

@@ -7,15 +7,12 @@
 
 void computeMatricesFromInputs(GLFWwindow *window);
 
-void handleStateChange(GLFWwindow* window, ControlState& state);
+void handleStateChange(GLFWwindow* window);
 
 void centerCamera(GLFWwindow *window, std::vector<Planet>& planets);
 
 glm::vec3 centerOfMass(std::vector<Planet> planets);
 
 void orbitCamera(GLFWwindow* window, Planet& planet, float orbitRadius);
-glm::mat4 getViewMatrix();
-
-glm::mat4 getProjectionMatrix();
 
 #endif //CONTROLS_H

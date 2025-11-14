@@ -14,19 +14,7 @@
 
 using namespace glm;
 
-glm::mat4 ViewMatrix;
-glm::mat4 ProjectionMatrix;
-
 static GLuint pickingFBO = 0;
-
-glm::mat4 getViewMatrix()
-{
-	return ViewMatrix;
-}
-glm::mat4 getProjectionMatrix()
-{
-	return ProjectionMatrix;
-}
 
 // Camera state
 struct CameraState {
@@ -109,10 +97,10 @@ void orbitCamera(GLFWwindow* window, Planet& planet, float orbitRadius)
 
     // Projection matrix (you might want to set this elsewhere)
     float FoV = initialFoV; // Ensure initialFoV is defined elsewhere
-    ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
+    state.ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
 
     // View matrix using lookAt
-    ViewMatrix = glm::lookAt(
+    state.ViewMatrix = glm::lookAt(
         cameraPosition,              // Camera position orbiting planet
         planet.getScaledPosition(),  // Look at planet center
         up                          // Up vector
@@ -122,7 +110,7 @@ void orbitCamera(GLFWwindow* window, Planet& planet, float orbitRadius)
 }
 
 
-void handleStateChange(GLFWwindow *window, ControlState &state)
+void handleStateChange(GLFWwindow *window)
 {
 	// Implement state change handling logic here
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
@@ -241,8 +229,8 @@ void computeMatricesFromInputs(GLFWwindow *window)
     const float FoV = initialFoV; // - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
     // Update matrices
-    ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
-    ViewMatrix = glm::lookAt(
+    state.ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
+    state.ViewMatrix = glm::lookAt(
         freeCamState.position,
         freeCamState.position + direction,
         up
@@ -263,7 +251,7 @@ glm::vec3 centerOfMass(std::vector<Planet> planets) {
 void centerCamera(GLFWwindow *window, std::vector<Planet>& planets) {
 	glm::vec3 com = centerOfMass(planets);
 	freeCamState.position = com + glm::vec3(0.0f, 5.0f, 10.0f);
-	ViewMatrix = glm::lookAt(
+	state.ViewMatrix = glm::lookAt(
         freeCamState.position,              // Camera position orbiting planet
         com,  // Look at planet center
         glm::vec3(0, 1, 0)                          // Up vector

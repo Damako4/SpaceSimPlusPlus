@@ -59,19 +59,17 @@ Axis::Axis() {
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-    
-    std::cout << "Axis initialized: VAO=" << axisVAO << ", VBO=" << axisVBO << ", MVP=" << mvpID << ", Color=" << lineColorID << std::endl;
 }
 
 void Axis::renderAxis(Planet& planet) {
     // Save current program so we can restore it after drawing the axis
     GLint prevProgram = 0;
     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
-
+    
     glm::mat4 model = glm::translate(glm::mat4(1.0f), planet.getScaledPosition());
     model = glm::scale(model, glm::vec3(planet.getRadius() * 2.0f)); // Scale axis relative to planet size
-    glm::mat4 mvp = getProjectionMatrix() * getViewMatrix() * model;
-        
+    glm::mat4 mvp = state.ProjectionMatrix * state.ViewMatrix * model;
+
     glUseProgram(state.lineProgramID);
     glUniformMatrix4fv(mvpID, 1, GL_FALSE, &mvp[0][0]);
 
@@ -87,7 +85,7 @@ void Axis::renderAxis(Planet& planet) {
     glDrawArrays(GL_LINES, 4, 2);
     
     glBindVertexArray(0);
-
+    
     // Restore previous program so subsequent glUniform calls use the right program
     glUseProgram(static_cast<GLuint>(prevProgram));
 }

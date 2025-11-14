@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
+#include <soil2/SOIL2.h>
 
 #include <common.hpp>
 #include <structs.h>
@@ -21,21 +22,34 @@ SLOW TO GENERATE VERTICES FOR EVERY PLANET MADE
 
 static int planetID = 1;
 
-Planet::Planet(const std::string &name, TextureInfo info, glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration, float planetRadius, float planetMass) {
+Planet::Planet(const std::string &title, TextureInfo info, glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration, float planetRadius, float planetMass) {
     id = planetID++;
     if (planetID == 1) planetID = 1;
-    programID = state.programID;
     position_modelSpace = glm::dvec3(position);  // Real-world position
     this->velocity = glm::dvec3(velocity); // Real-world velocity
     this->acceleration = glm::dvec3(acceleration);
     mass = planetMass;
     radius = planetRadius;
+    name = title;
 
     textureInfo = info;
     textureInfo.useTexture = info.useTexture;
     
-    // Set color from texture info
-    if (!info.useTexture) {
+    if (textureInfo.useTexture && !textureInfo.texturePath.empty()) {
+        std::string fullPath = "../src/textures/" + textureInfo.texturePath;
+        textureInfo.texture = SOIL_load_OGL_texture(
+            fullPath.c_str(), 
+            SOIL_LOAD_AUTO, 
+            SOIL_CREATE_NEW_ID, 
+            SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT
+        );
+        if (textureInfo.texture == 0) {
+            std::cerr << "Failed to load texture: " << fullPath << std::endl;
+            textureInfo.useTexture = false;
+        }
+    }
+    
+    if (!textureInfo.useTexture) {
         color = info.color;
     } else {
         color = glm::vec3(1.0f, 1.0f, 1.0f); // Default white
@@ -56,14 +70,20 @@ Planet::Planet(const std::string &name, TextureInfo info, glm::vec3 position, gl
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
     glGenBuffers(1, &normalBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
     glGenBuffers(1, &uvBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
     glBufferData(GL_ARRAY_BUFFER, uv.size() * sizeof(glm::vec2), uv.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
     glBindVertexArray(0);
 
@@ -101,9 +121,9 @@ void Planet::generateSphereVertices(float radius, int sectorCount, int stackCoun
 
             pre_vertices.push_back(glm::vec3(x, y, z));
             pre_normals.push_back(glm::vec3(x * lengthInv, y * lengthInv, z * lengthInv));
-            
-            s = (float) j / sectorCount;
-            t = (float) i / stackCount;
+
+            s = 0.5 + (std::atan2(x * lengthInv, z * lengthInv) / (2 * glm::pi<float>()));
+            t = 0.5 + (std::asin(y * lengthInv) / glm::pi<float>());
             pre_uv.push_back(glm::vec2(s, t));
         }
     }
@@ -133,31 +153,23 @@ void Planet::generateSphereVertices(float radius, int sectorCount, int stackCoun
 }
 
 void Planet::render() {
-	glUseProgram(programID);
+	glUseProgram(state.programID);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    GLint diffuseColorLoc = glGetUniformLocation(programID, "diffuseColor");
+    GLint diffuseColorLoc = glGetUniformLocation(state.programID, "diffuseColor");
     glUniform3fv(diffuseColorLoc, 1, &color[0]);
 
-    glUniform1i(glGetUniformLocation(programID, "useTexture"), textureInfo.useTexture);
+    glUniform1i(glGetUniformLocation(state.programID, "useTexture"), textureInfo.useTexture);
+
+    if (textureInfo.useTexture && textureInfo.texture != 0) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureInfo.texture);
+        glUniform1i(glGetUniformLocation(state.programID, "textureSampler"), 0);
+    }
 
     glBindVertexArray(VertexArrayID);
-
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glEnableVertexAttribArray(2);
-	glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
 
 	glDrawElements(
 		GL_TRIANGLES,
@@ -166,21 +178,21 @@ void Planet::render() {
 		static_cast<void *>(nullptr)
 	);
 
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-
     glBindVertexArray(0);
 }
 
 
 glm::vec3 Planet::getPlanetScreenCoords() const {
     glm::vec4 clipSpacePos = state.ProjectionMatrix * state.ViewMatrix * glm::vec4(getScaledPosition(), 1.0f);
+    
+    if (clipSpacePos.w <= 0.0f) {
+        return glm::vec3(-1000, -1000, -1); // Off screen
+    }
+    
     glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos) / clipSpacePos.w;
 
-    // Convert NDC to window coordinates
-    float x = (ndcSpacePos.x + 1.0f) * 0.5f * static_cast<float>(WIDTH);
-    float y = (ndcSpacePos.y + 1.0f) * 0.5f * static_cast<float>(HEIGHT);
+    float x = (ndcSpacePos.x + 1.0f) * 0.5f * static_cast<float>(WIDTH * 2);
+    float y = (ndcSpacePos.y + 1.0f) * 0.5f * static_cast<float>(HEIGHT * 2);
 
     return glm::vec3(x, y, ndcSpacePos.z);
 }

@@ -15,6 +15,7 @@
 #include <planets.h>
 #include <physics.h>
 #include <world/axis.h>
+#include <world/grid.h>
 
 // Global state variable definition
 std::vector<Planet> planets;
@@ -127,7 +128,6 @@ int main()
 	// TODO: Implement proper transparency!!!
 
 	initText2D("../src/textures/fontmap.tga");
-	//initWorldGrid();
 	initRaycastingShader();
 
 	// Initialize global state properties
@@ -138,6 +138,8 @@ int main()
 	state.selectedPlanet = nullptr;
 	state.axisHandler = new Axis();
 
+	Grid worldGrid(20, 0.5f);
+
 	TextureInfo info;
 
 	auto earthMass = 5.972e24f;
@@ -146,21 +148,29 @@ int main()
 	info.useTexture = true;
 	info.texturePath = "earth.jpg";
 	info.textureSamplerID = glGetUniformLocation(programID, "textureSampler");
-	Planet earth = Planet("Earth", info, earthPosition, earthVelocity, glm::vec3(0.0f), 0.5f, earthMass);
+	Planet earth = Planet("Earth", info, earthPosition, earthVelocity, glm::vec3(0.0f), 0.1f, earthMass);
 	planets.push_back(earth);
 
 
 	auto sunMass = 1.9885e30f;
 	auto sunPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 	auto sunVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
-	info.useTexture = false;
-	info.color = glm::vec3(0.0f, 1.0f, 0.0f);
-	Planet sun = Planet("Sun", info, sunPosition, sunVelocity, glm::vec3(0.0f), 2.0f, sunMass);
+	info.useTexture = true;
+	info.texturePath = "sun.jpg";
+	Planet sun = Planet("Sun", info, sunPosition, sunVelocity, glm::vec3(0.0f), 1.0f, sunMass);
 	planets.push_back(sun);
 
+	/*
+	auto moonMass = 7.3477e22;
+	auto MoonPosition = earthPosition + glm::vec3(3.844e8f, 0.0f, 0.0f);
+	auto moonVelocity = earthVelocity + glm::vec3(0.0f, 0.0f, 1022.0f);
+	info.useTexture = true;
+	info.texturePath = "moon.jpg";
+	Planet moon = Planet("Moon", info, MoonPosition, moonVelocity, glm::vec3(0.0f), 0.2f, moonMass);
+	planets.push_back(moon);
+	*/
+
 	computeMatricesFromInputs(window);
-	glm::mat4 ProjectionMatrix = getProjectionMatrix();
-	glm::mat4 ViewMatrix = getViewMatrix();
 	auto ModelMatrix = glm::mat4(1.0);
 
 	double lastTime = glfwGetTime();
@@ -188,14 +198,8 @@ int main()
 			lastFPSTime = currentTime;
 		}
 
-		handleStateChange(window, state);
+		handleStateChange(window);
 		
-		ProjectionMatrix = getProjectionMatrix();
-		ViewMatrix = getViewMatrix();
-		state.ProjectionMatrix = ProjectionMatrix;
-		state.ViewMatrix = ViewMatrix;
-		glfwSetWindowUserPointer(window, &state);
-
 		//drawWorldGrid(ProjectionMatrix, ViewMatrix, centerOfMass(planets));
 
 		glEnable(GL_DEPTH_TEST);
@@ -209,11 +213,11 @@ int main()
 			ObjectModelMatrix = glm::translate(ObjectModelMatrix, scaledPositionModelSpace); // Translate to planet's position
 			ObjectModelMatrix = glm::scale(ObjectModelMatrix, glm::vec3(planet.getRadius()));	   // Scale planet based on time for demonstration
 
-			glm::mat4 ObjectMVP = ProjectionMatrix * ViewMatrix * ObjectModelMatrix;
+			glm::mat4 ObjectMVP = state.ProjectionMatrix * state.ViewMatrix * ObjectModelMatrix;
 
 			glUniformMatrix4fv(matrixID, 1, GL_FALSE, &ObjectMVP[0][0]);
 			glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &ObjectModelMatrix[0][0]); // send per-object model matrix
-			glUniformMatrix4fv(cameraMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+			glUniformMatrix4fv(cameraMatrixID, 1, GL_FALSE, &state.ViewMatrix[0][0]);
 
 			glUniform3fv(diffuseColorID, 1, &planet.color[0]);
 
@@ -221,15 +225,21 @@ int main()
 
 			if (state.selectedPlanet == &planet && state.axisHandler != nullptr) {
 				state.axisHandler->renderAxis(planet);
-			}
-
-			/*
-			printText2D(planet.name, 
-						  static_cast<int>(getPlanetScreenCoords(planet, ViewMatrix, ProjectionMatrix).x),
-						  static_cast<int>(getPlanetScreenCoords(planet, ViewMatrix, ProjectionMatrix).y),
-						  20);
-						  */
+			}			  
 		}
+
+		for (Planet& planet : state.planets) {
+			glm::vec3 screenCoords = planet.getPlanetScreenCoords();
+			std::cout << screenCoords.y << std::endl;
+			
+				printText2D(planet.name, 
+							  static_cast<int>(screenCoords.x),
+							  static_cast<int>(screenCoords.y),
+							  20); 
+		}
+
+		worldGrid.update();
+		worldGrid.render();
 
 		std::string modeString = "View Mode: ";
 		if (state.viewMode == ViewMode::FREE)
@@ -240,13 +250,13 @@ int main()
 		{
 			modeString += "Orbit Camera";
 		}
-		/*
+		
 		printText2D(modeString, WIDTH * 2 - 500, HEIGHT * 2 - 30, 20);
 		std::string frametimeString = "Frametime : " + std::to_string(frametime);
 		printText2D(frametimeString, 0, HEIGHT * 2 - 30, 30);
 		std::string controlsString = "Controls: C - Free Camera | O - Orbit Camera | G - Move Object | S - Scale Object | V - Toggle Grid";
 		printText2D(controlsString, 10, 10, 20);
-		*/
+		
 
 		glfwSwapBuffers(window);
 

@@ -8,6 +8,8 @@
 #define FAR_CLIP 100.0f
 
 #define SCALE_FACTOR 2.992e10
+const double gravitationalConstant = 6.674e-11;
+const double lightConstant = 3e8;
 
 #define GLFW_INCLUDE_NONE
 #include <glad/glad.h>

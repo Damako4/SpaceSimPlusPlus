@@ -7,13 +7,14 @@ class Grid : public Object {
     public:
         Grid(int size, float spacing);
 
-        void init();
         void update();
         void render();
     private:
-        GLuint VBO;
+        GLuint lineColorID;
+        std::vector<glm::vec3> gridVertices;
         int gridSize;
         float gridSpacing;
+        int vertexCount;
 };
 
 #endif //GRID_H
