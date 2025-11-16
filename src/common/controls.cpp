@@ -88,6 +88,8 @@ void orbitCamera(GLFWwindow* window, Planet& planet, float orbitRadius)
         orbitRadius * sin(orbitAngle)
     );
 
+    state.cameraPosition = cameraPosition;
+
     // Calculate direction vector pointing from camera to planet center
     glm::vec3 direction = glm::normalize(planet.getScaledPosition() - cameraPosition);
 
@@ -250,7 +252,7 @@ glm::vec3 centerOfMass(std::vector<Planet> planets) {
 
 void centerCamera(GLFWwindow *window, std::vector<Planet>& planets) {
 	glm::vec3 com = centerOfMass(planets);
-	freeCamState.position = com + glm::vec3(0.0f, 5.0f, 10.0f);
+	state.cameraPosition = com + glm::vec3(0.0f, 5.0f, 10.0f);
 	state.ViewMatrix = glm::lookAt(
         freeCamState.position,              // Camera position orbiting planet
         com,  // Look at planet center

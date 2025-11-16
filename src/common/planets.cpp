@@ -153,6 +153,7 @@ void Planet::generateSphereVertices(float radius, int sectorCount, int stackCoun
 }
 
 void Planet::render() {
+    
 	glUseProgram(state.programID);
 
 	glEnable(GL_BLEND);

@@ -58,9 +58,18 @@ struct ControlState {
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
 
+	GLint matrixID;
+	GLint lightPositionID;
+	GLint modelMatrixID;
+	GLint cameraMatrixID;
+	GLint diffuseColorID;
+
 	GLuint programID;
 	GLuint lineProgramID;
 	GLuint textProgramID;
+	GLuint cubemapProgramID;
+
+	glm::vec3 cameraPosition;
 
 	ControlState(std::vector<Planet>& planet_ref) : planets(planet_ref) {
 		

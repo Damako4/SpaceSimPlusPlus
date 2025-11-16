@@ -7,7 +7,7 @@
 #include <planets.h>
 
 // Constants for stable orbital motion
-const float timeScale = 1000.0f; // 8640.0f;        // 1 simulation frame = 1 day for visible orbital motion
+const float timeScale = 8640.0f; // 8640.0f;        // 1 simulation frame = 1 day for visible orbital motion
 
 glm::dvec3 calculateForces(std::vector<Planet> planets, Planet target)
 {
