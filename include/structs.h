@@ -57,7 +57,7 @@ struct CameraState{
 struct ControlState {
 	ViewMode viewMode;
 	ControlMode controlMode;
-	bool gridVisible;
+	bool gridVisible = true;
 	std::vector<Planet>& planets;
 	Planet* selectedPlanet;
 	Axis* axisHandler;

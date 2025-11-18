@@ -221,6 +221,9 @@ int main()
 		glEnable(GL_DEPTH_TEST);
 		glUseProgram(programID);
 
+		lightPosition_worldSpace = planets[0].getScaledPosition();
+		glUniform3fv(lightPositionID, 1, &lightPosition_worldSpace[0]);
+
 		for (Planet &planet : planets)
 		{
 			glm::vec3 scaledPositionModelSpace = planet.getScaledPosition();
@@ -262,8 +265,10 @@ int main()
 						20);
 		}
 
-		worldGrid.update();
-		worldGrid.render();
+		if (state.gridVisible) {
+			worldGrid.update();
+			worldGrid.render();
+		}
 
 		std::string modeString = "View Mode: ";
 		if (state.viewMode == ViewMode::FREE)

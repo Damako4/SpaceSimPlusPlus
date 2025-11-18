@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.30)
 set(CMAKE_GENERATOR "Unix Makefiles")
 
-project(FinalGame)
+project(SpaceSimPlusPlus)
 
 set(CMAKE_CXX_STANDARD 20)
 
