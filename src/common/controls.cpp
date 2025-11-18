@@ -174,7 +174,7 @@ void handleStateChange(GLFWwindow *window)
     }
     else
     {
-        orbitCamera(window, centerOfMass(state.planets), 20.0f);
+        orbitCamera(window, vec3(0.0f), 20.0f);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 }

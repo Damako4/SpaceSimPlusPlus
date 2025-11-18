@@ -17,6 +17,7 @@
 #include <world/axis.h>
 #include <world/grid.h>
 #include <world/skybox.h>
+#include <world/box.h>
 
 // Global state variable definition
 std::vector<Planet> planets;
@@ -140,6 +141,8 @@ int main()
 
 	// Initialize global state properties
 	state.programID = programID;
+	state.matrixID = matrixID;
+	state.modelMatrixID = modelMatrixID;
 	state.gridVisible = false;
 	state.viewMode = ViewMode::ORBIT;
 	state.controlMode = ControlMode::VIEW;
@@ -194,6 +197,8 @@ int main()
 	int nbFrames = 0;
 	double frametime = 0;
 
+	Box box(1.0f);
+
 	do
 	{
 		glfwPollEvents();
@@ -230,7 +235,7 @@ int main()
 
 			glm::mat4 ObjectModelMatrix = glm::mat4(1.0f);									  // Reset to identity
 			ObjectModelMatrix = glm::translate(ObjectModelMatrix, scaledPositionModelSpace);  // Translate to planet's position
-			ObjectModelMatrix = glm::scale(ObjectModelMatrix, glm::vec3(planet.getRadius())); // Scale planet based on time for demonstration
+			ObjectModelMatrix = glm::scale(ObjectModelMatrix, glm::vec3(planet.getRadius()));
 
 			glm::mat4 ObjectMVP = state.ProjectionMatrix * state.ViewMatrix * ObjectModelMatrix;
 
@@ -264,6 +269,9 @@ int main()
 						static_cast<int>(screenCoords.y),
 						20);
 		}
+
+		box.render();
+
 
 		if (state.gridVisible) {
 			worldGrid.update();
