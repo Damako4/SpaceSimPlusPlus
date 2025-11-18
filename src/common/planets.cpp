@@ -106,8 +106,6 @@ void Planet::generateSphereVertices(float radius, int sectorCount, int stackCoun
     float stackStep = glm::pi<float>() / stackCount;
     float sectorAngle, stackAngle;
 
-    // generate (stackCount + 1) rows and (sectorCount + 1) columns so the
-    // first and last sector vertices coincide — this closes the seam.
     for (int i = 0; i <= stackCount; ++i) {
         stackAngle = (glm::pi<float>() / 2) - (i * stackStep);
         xy = radius * std::cos(stackAngle);
@@ -122,13 +120,14 @@ void Planet::generateSphereVertices(float radius, int sectorCount, int stackCoun
             pre_vertices.push_back(glm::vec3(x, y, z));
             pre_normals.push_back(glm::vec3(x * lengthInv, y * lengthInv, z * lengthInv));
 
-            s = 0.5 + (std::atan2(x * lengthInv, z * lengthInv) / (2 * glm::pi<float>()));
-            t = 0.5 + (std::asin(y * lengthInv) / glm::pi<float>());
+            // Fixed UV coordinates
+            s = (float)j / (float)sectorCount;  // Simple linear mapping from 0 to 1
+            t = (float)i / (float)stackCount;   // Simple linear mapping from 0 to 1
             pre_uv.push_back(glm::vec2(s, t));
         }
     }
 
-    // generate CCW index list of sphere triangles
+    // Generate indices (same as before)
     int k1, k2;
     for (int i = 0; i < stackCount; ++i) {
         k1 = i * (sectorCount + 1);

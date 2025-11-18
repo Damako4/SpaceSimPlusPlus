@@ -16,13 +16,6 @@ using namespace glm;
 
 static GLuint pickingFBO = 0;
 
-// Camera state
-struct CameraState {
-    glm::vec3 position = glm::vec3(4, 4, 4);
-    float horizontalAngle = -90.0f;
-    float verticalAngle = 0.0f;
-} freeCamState;
-
 // Initial Field of View
 float initialFoV = FOV;
 
@@ -34,33 +27,33 @@ static ViewMode previousViewMode = ViewMode::FREE;
 
 bool isKeyPressedOnce(int key, GLFWwindow *window)
 {
-	static std::unordered_map<int, bool> keyHeld;
+    static std::unordered_map<int, bool> keyHeld;
 
-	bool pressed = glfwGetKey(window, key) == GLFW_PRESS;
+    bool pressed = glfwGetKey(window, key) == GLFW_PRESS;
 
-	if (pressed && !keyHeld[key])
-	{
-		keyHeld[key] = true;
-		return true; // first frame the key is pressed
-	}
-	else if (!pressed)
-	{
-		keyHeld[key] = false;
-	}
-	return false;
+    if (pressed && !keyHeld[key])
+    {
+        keyHeld[key] = true;
+        return true; // first frame the key is pressed
+    }
+    else if (!pressed)
+    {
+        keyHeld[key] = false;
+    }
+    return false;
 }
 
-void orbitCamera(GLFWwindow* window, Planet& planet, float orbitRadius)
+void orbitCamera(GLFWwindow *window, glm::vec3 planetPosition, float orbitRadius)
 {
     static double lastTime = glfwGetTime();
     static float orbitAngle = 0.0f;
-    
+
     const double currentTime = glfwGetTime();
     const float deltaTime = static_cast<float>(currentTime - lastTime);
-    
-    float orbitHeight = 3.0f; // Height above the planet
+
+    float orbitHeight = 3.0f;       // Height above the planet
     const float ORBIT_SPEED = 3.0f; // Reduced speed constant
-    
+
     // Only change angle when keys are pressed
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
     {
@@ -70,8 +63,7 @@ void orbitCamera(GLFWwindow* window, Planet& planet, float orbitRadius)
     {
         orbitAngle -= ORBIT_SPEED * deltaTime;
     }
-    
-    // Normalize angle to prevent floating point issues
+
     if (orbitAngle > 2.0f * M_PI)
     {
         orbitAngle -= 2.0f * M_PI;
@@ -81,181 +73,176 @@ void orbitCamera(GLFWwindow* window, Planet& planet, float orbitRadius)
         orbitAngle += 2.0f * M_PI;
     }
 
-    // Calculate camera position relative to planet's position
-    glm::vec3 cameraPosition = planet.getScaledPosition() + glm::vec3(
-        orbitRadius * cos(orbitAngle),
-        orbitHeight,
-        orbitRadius * sin(orbitAngle)
-    );
+    glm::vec3 cameraPosition = planetPosition + glm::vec3(
+                                                                orbitRadius * cos(orbitAngle),
+                                                                orbitHeight,
+                                                                orbitRadius * sin(orbitAngle));
 
-    state.cameraPosition = cameraPosition;
+    state.freeCamState.position = cameraPosition;
 
-    // Calculate direction vector pointing from camera to planet center
-    glm::vec3 direction = glm::normalize(planet.getScaledPosition() - cameraPosition);
+    glm::vec3 direction = glm::normalize(planetPosition - cameraPosition);
 
-    // Calculate right and up vectors for the camera
-    glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0, 1, 0), direction));
-    glm::vec3 up = glm::cross(direction, right);
+    state.freeCamState.horizontalAngle = atan2(direction.x, direction.z);
+    state.freeCamState.verticalAngle = asin(direction.y);
 
-    // Projection matrix (you might want to set this elsewhere)
-    float FoV = initialFoV; // Ensure initialFoV is defined elsewhere
-    state.ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
+    glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0, 1, 0)));
+    glm::vec3 up = glm::cross(right, direction);
 
-    // View matrix using lookAt
-    state.ViewMatrix = glm::lookAt(
-        cameraPosition,              // Camera position orbiting planet
-        planet.getScaledPosition(),  // Look at planet center
-        up                          // Up vector
-    );
+    float FoV = initialFoV;
+
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    state.ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(width) / float(height), 0.1f, 100.0f);
+    state.ViewMatrix = glm::lookAt(state.freeCamState.position, state.freeCamState.position + direction, up);
 
     lastTime = currentTime;
 }
 
-
 void handleStateChange(GLFWwindow *window)
 {
-	// Implement state change handling logic here
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
-	{
-		state.controlMode = ControlMode::VIEW;
-		state.viewMode = ViewMode::ORBIT;
-	}
-	if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
-	{
-		state.controlMode = ControlMode::VIEW;
-		state.viewMode = ViewMode::FREE;
-	}
-	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-	{
-		state.controlMode = ControlMode::MOVE;
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-	{
-		state.controlMode = ControlMode::SCALE;
-	}
-	if (isKeyPressedOnce(GLFW_KEY_V, window))
-	{
-		state.gridVisible = !state.gridVisible;
-	}
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-	{
-		state.controlMode = ControlMode::NONE;
-	}
-	for (int i = 1; i < 10; i++)
-	{
-		if (isKeyPressedOnce(GLFW_KEY_0 + i, window))
-		{
-			// Select planet with ID i
-			state.selectedPlanet = nullptr;
-			for (Planet &planet : state.planets)
-			{
-				if (planet.id == i)
-				{
-					state.selectedPlanet = &planet;
-					break;
-				}
-			}
-		}
-	}
+    
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+    {
+        state.controlMode = ControlMode::VIEW;
+        state.viewMode = ViewMode::ORBIT;
+    }
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+    {
+        state.controlMode = ControlMode::VIEW;
+        state.viewMode = ViewMode::FREE;
+
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
+        glfwSetCursorPos(window, width / 2, height / 2);
+
+    }
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+    {
+        state.controlMode = ControlMode::MOVE;
+    }
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+    {
+        state.controlMode = ControlMode::SCALE;
+    }
+    if (isKeyPressedOnce(GLFW_KEY_V, window))
+    {
+        state.gridVisible = !state.gridVisible;
+    }
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    {
+        state.controlMode = ControlMode::NONE;
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    {
+        speed = 10.0f;
+    }
+    else
+    {
+        speed = 3.0f;
+    }
+    for (int i = 1; i < 10; i++)
+    {
+        if (isKeyPressedOnce(GLFW_KEY_0 + i, window))
+        {
+            state.selectedPlanet = nullptr;
+            for (Planet &planet : state.planets)
+            {
+                if (planet.id == i)
+                {
+                    state.selectedPlanet = &planet;
+                    break;
+                }
+            }
+        }
+    }
 
     if (state.controlMode != ControlMode::NONE)
-		{
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			if (state.viewMode == ViewMode::FREE)
-			{
-				centerCamera(window, state.planets);
-			} else if (state.viewMode == ViewMode::ORBIT && state.selectedPlanet != nullptr)
-			{
-				orbitCamera(window, *state.selectedPlanet, 6.0f);
-			}
-		} else {
-			//std::cout << "No control mode active" << std::endl;
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
+    {
+        if (state.viewMode == ViewMode::FREE)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            computeMatricesFromInputs(window);
+        }
+        else if (state.viewMode == ViewMode::ORBIT)
+        {
+            if (state.selectedPlanet != nullptr) {
+                orbitCamera(window, state.selectedPlanet->getScaledPosition(), 6.0f);
+            } else {
+                orbitCamera(window, centerOfMass(state.planets), 20.0f);
+            }
+        }
+    }
+    else
+    {
+        orbitCamera(window, centerOfMass(state.planets), 20.0f);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
 }
-
 
 void computeMatricesFromInputs(GLFWwindow *window)
 {
     static double lastTime = glfwGetTime();
-    const double currentTime = glfwGetTime();
-    const auto deltaTime = static_cast<float>(currentTime - lastTime);
 
-    // Get mouse position
+    double currentTime = glfwGetTime();
+    float deltaTime = float(currentTime - lastTime);
+
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
 
-    // Reset mouse position for next frame
-    glfwSetCursorPos(window, static_cast<float>(WIDTH) / 2, static_cast<float>(HEIGHT) / 2);
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
 
-    // Compute new orientation
-    freeCamState.horizontalAngle += mouseSpeed * static_cast<float>(static_cast<float>(WIDTH) / 2 - xpos);
-    freeCamState.verticalAngle += mouseSpeed * static_cast<float>(static_cast<float>(HEIGHT) / 2 - ypos);
+    glfwSetCursorPos(window, width / 2, height / 2);
 
-    // Clamp vertical angle
-    freeCamState.verticalAngle = glm::clamp(freeCamState.verticalAngle, -1.0f, 1.0f);
+    float mouseSpeed = 0.005f;
 
-    // Direction : Spherical coordinates to Cartesian coordinates conversion
-    const glm::vec3 direction(
-        cos(freeCamState.verticalAngle) * sin(freeCamState.horizontalAngle),
-        sin(freeCamState.verticalAngle),
-        cos(freeCamState.verticalAngle) * cos(freeCamState.horizontalAngle));
+    state.freeCamState.horizontalAngle += mouseSpeed * float(width / 2 - xpos);
+    state.freeCamState.verticalAngle += mouseSpeed * float(height / 2 - ypos);
 
-    // Right vector
-    const auto right = glm::vec3(
-        sin(freeCamState.horizontalAngle - 3.14f / 2.0f),
-        0,
-        cos(freeCamState.horizontalAngle - 3.14f / 2.0f));
+    const float vlimit = glm::half_pi<float>() - 0.01f;
+    state.freeCamState.verticalAngle = glm::clamp(state.freeCamState.verticalAngle, -vlimit, vlimit);
 
-    // Up vector
-    const glm::vec3 up = glm::cross(right, direction);
+    glm::vec3 direction(
+        cos(state.freeCamState.verticalAngle) * sin(state.freeCamState.horizontalAngle),
+        sin(state.freeCamState.verticalAngle),
+        cos(state.freeCamState.verticalAngle) * cos(state.freeCamState.horizontalAngle));
 
-    // Handle movement
+    glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0, 1, 0)));
+    glm::vec3 up = glm::cross(right, direction);
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    {
-        freeCamState.position += direction * deltaTime * speed;
-    }
+        state.freeCamState.position += direction * deltaTime * speed;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    {
-        freeCamState.position -= direction * deltaTime * speed;
-    }
+        state.freeCamState.position -= direction * deltaTime * speed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    {
-        freeCamState.position += right * deltaTime * speed;
-    }
+        state.freeCamState.position += right * deltaTime * speed;
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    {
-        freeCamState.position -= right * deltaTime * speed;
-    }
+        state.freeCamState.position -= right * deltaTime * speed;
 
-    const float FoV = initialFoV; // - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
-
-    // Update matrices
-    state.ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
-    state.ViewMatrix = glm::lookAt(
-        freeCamState.position,
-        freeCamState.position + direction,
-        up
-    );
+    state.ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(width) / float(height), 0.1f, 100.0f);
+    state.ViewMatrix = glm::lookAt(state.freeCamState.position, state.freeCamState.position + direction, up);
 
     lastTime = currentTime;
 }
 
-glm::vec3 centerOfMass(std::vector<Planet> planets) {
-	glm::vec3 average;
-	for (Planet planet: planets) {
-		average += planet.getScaledPosition();
-	}
-	average /= static_cast<float>(planets.size());
-	return average;
+glm::vec3 centerOfMass(std::vector<Planet> planets)
+{
+    glm::vec3 average;
+    for (Planet planet : planets)
+    {
+        average += planet.getScaledPosition();
+    }
+    average /= static_cast<float>(planets.size());
+    return average;
 }
 
-void centerCamera(GLFWwindow *window, std::vector<Planet>& planets) {
-	glm::vec3 com = centerOfMass(planets);
-	state.cameraPosition = com + glm::vec3(0.0f, 5.0f, 10.0f);
-	state.ViewMatrix = glm::lookAt(
-        freeCamState.position,              // Camera position orbiting planet
-        com,  // Look at planet center
-        glm::vec3(0, 1, 0)                          // Up vector
+void centerCamera(GLFWwindow *window, std::vector<Planet> &planets)
+{
+    glm::vec3 com = centerOfMass(planets);
+    state.freeCamState.position = com + glm::vec3(0.0f, 5.0f, 10.0f);
+    state.ViewMatrix = glm::lookAt(
+        state.freeCamState.position, // Camera position orbiting planet
+        com,                         // Look at planet center
+        glm::vec3(0, 1, 0)           // Up vector
     );
 }

@@ -29,80 +29,93 @@ void initText2D(const char * texturePath) {
 }
 
 void printText2D(const std::string& text, int x, int y, int size) {
-	unsigned int length = text.length();
+    unsigned int length = text.length();
 
-	std::vector<glm::vec2> vertices;
-	std::vector<glm::vec2> UVs;
-	for ( unsigned int i=0 ; i<length ; i++ ) {
-		auto vertex_up_left    = glm::vec2( x+i*size     , y+size );
-		auto vertex_up_right   = glm::vec2( x+i*size+size, y+size );
-		auto vertex_down_right = glm::vec2( x+i*size+size, y      );
-		auto vertex_down_left  = glm::vec2( x+i*size     , y      );
+    std::vector<glm::vec2> vertices;
+    std::vector<glm::vec2> UVs;
+    
+    for ( unsigned int i=0 ; i<length ; i++ ) {
+        // Calculate character position
+        int charX = x + i * size;
+        
+        // Skip characters that are completely off-screen
+        if (charX + size < 0 || charX > WIDTH * 2 || y + size < 0 || y > HEIGHT * 2) {
+            continue;
+        }
+        
+        auto vertex_up_left    = glm::vec2( charX       , y+size );
+        auto vertex_up_right   = glm::vec2( charX + size, y+size );
+        auto vertex_down_right = glm::vec2( charX + size, y      );
+        auto vertex_down_left  = glm::vec2( charX       , y      );
 
-		vertices.push_back(vertex_up_left   );
-		vertices.push_back(vertex_down_left );
-		vertices.push_back(vertex_up_right  );
+        vertices.push_back(vertex_up_left   );
+        vertices.push_back(vertex_down_left );
+        vertices.push_back(vertex_up_right  );
 
-		vertices.push_back(vertex_down_right);
-		vertices.push_back(vertex_up_right);
-		vertices.push_back(vertex_down_left);
+        vertices.push_back(vertex_down_right);
+        vertices.push_back(vertex_up_right);
+        vertices.push_back(vertex_down_left);
 
-		const char character = text[i];
-		float uv_x = static_cast<float>(character%16)/16.0f;
-		float uv_y = static_cast<float>(character/16)/16.0f;
+        const char character = text[i];
+        float uv_x = static_cast<float>(character%16)/16.0f;
+        float uv_y = static_cast<float>(character/16)/16.0f;
 
-		glm::vec2 uv_up_left    = glm::vec2( uv_x           , 1.0f - uv_y );
-		glm::vec2 uv_up_right   = glm::vec2( uv_x+1.0f/16.0f, 1.0f - uv_y );
-		glm::vec2 uv_down_right = glm::vec2( uv_x+1.0f/16.0f, 1.0f - (uv_y + 1.0f/16.0f) );
-		glm::vec2 uv_down_left  = glm::vec2( uv_x           , 1.0f - (uv_y + 1.0f/16.0f) );
+        glm::vec2 uv_up_left    = glm::vec2( uv_x           , 1.0f - uv_y );
+        glm::vec2 uv_up_right   = glm::vec2( uv_x+1.0f/16.0f, 1.0f - uv_y );
+        glm::vec2 uv_down_right = glm::vec2( uv_x+1.0f/16.0f, 1.0f - (uv_y + 1.0f/16.0f) );
+        glm::vec2 uv_down_left  = glm::vec2( uv_x           , 1.0f - (uv_y + 1.0f/16.0f) );
 
-		UVs.push_back(uv_up_left   );
-		UVs.push_back(uv_down_left );
-		UVs.push_back(uv_up_right  );
+        UVs.push_back(uv_up_left   );
+        UVs.push_back(uv_down_left );
+        UVs.push_back(uv_up_right  );
 
-		UVs.push_back(uv_down_right);
-		UVs.push_back(uv_up_right);
-		UVs.push_back(uv_down_left);
-	}
+        UVs.push_back(uv_down_right);
+        UVs.push_back(uv_up_right);
+        UVs.push_back(uv_down_left);
+    }
 
-	// Bind VAO before setting up vertex attributes
-	glBindVertexArray(textVAO);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, textVertexBufferID);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec2), &vertices[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    // Don't render if no visible characters
+    if (vertices.empty()) {
+        return;
+    }
 
-	glBindBuffer(GL_ARRAY_BUFFER, textUVBufferID);
-	glBufferData(GL_ARRAY_BUFFER, UVs.size() * sizeof(glm::vec2), &UVs[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    // Bind VAO before setting up vertex attributes
+    glBindVertexArray(textVAO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, textVertexBufferID);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec2), &vertices[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glUseProgram(textShaderID);
+    glBindBuffer(GL_ARRAY_BUFFER, textUVBufferID);
+    glBufferData(GL_ARRAY_BUFFER, UVs.size() * sizeof(glm::vec2), &UVs[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	const GLint widthID = glGetUniformLocation(textShaderID, "width");
-	const GLint heightID = glGetUniformLocation(textShaderID, "height");
+    glUseProgram(textShaderID);
 
-	glUniform1i(widthID, WIDTH);
-	glUniform1i(heightID, HEIGHT);
+    const GLint widthID = glGetUniformLocation(textShaderID, "width");
+    const GLint heightID = glGetUniformLocation(textShaderID, "height");
 
-	const GLint textureSamplerID = glGetUniformLocation(textShaderID, "textureSampler");
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textTextureID);
-	glUniform1i(textureSamplerID, 0);
+    glUniform1i(widthID, WIDTH);
+    glUniform1i(heightID, HEIGHT);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    const GLint textureSamplerID = glGetUniformLocation(textShaderID, "textureSampler");
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textTextureID);
+    glUniform1i(textureSamplerID, 0);
 
-	// VAO is already bound with vertex attributes set up
-	glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glDisable(GL_BLEND);
+    // VAO is already bound with vertex attributes set up
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
+    glDisable(GL_BLEND);
 
-	// Unbind VAO
-	glBindVertexArray(0);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 
+    // Unbind VAO
+    glBindVertexArray(0);
 }

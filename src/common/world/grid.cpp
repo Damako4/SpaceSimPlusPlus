@@ -75,7 +75,7 @@ void Grid::update()
             float minDistance = 0.2f;
             r = std::max(r, minDistance);
 
-            float massScale = planet.getMass() / 1e30f;  // Scale mass
+            float massScale = planet.getMass() / 1e29f;  // Scale mass
             float wellDepth = 2.0f;                      // Maximum depth of well
             float wellRadius = 8.0f;                     // How far the effect extends
             float smoothness = 2.0f;                     // Controls steepness (higher = smoother)

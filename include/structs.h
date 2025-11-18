@@ -48,6 +48,12 @@ typedef struct {
 	TextureInfo textureInfo;
 } Object;
 
+struct CameraState{
+    glm::vec3 position = glm::vec3(4, 4, 4);
+    float horizontalAngle = 90.0f;
+    float verticalAngle = 0.0f;
+};
+
 struct ControlState {
 	ViewMode viewMode;
 	ControlMode controlMode;
@@ -57,6 +63,8 @@ struct ControlState {
 	Axis* axisHandler;
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
+
+	CameraState freeCamState;
 
 	GLint matrixID;
 	GLint lightPositionID;
@@ -68,8 +76,6 @@ struct ControlState {
 	GLuint lineProgramID;
 	GLuint textProgramID;
 	GLuint cubemapProgramID;
-
-	glm::vec3 cameraPosition;
 
 	ControlState(std::vector<Planet>& planet_ref) : planets(planet_ref) {
 		

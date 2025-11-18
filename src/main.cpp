@@ -22,6 +22,11 @@
 std::vector<Planet> planets;
 ControlState state(planets);
 
+void framebufferSizeCallback(GLFWwindow *window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
+
 int main()
 {
 	if (!glfwInit())
@@ -44,7 +49,7 @@ int main()
 		return 1;
 	}
 	glfwMakeContextCurrent(window);
-	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_FALSE);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetMouseButtonCallback(window, raycast);
 
@@ -74,6 +79,7 @@ int main()
 
 	int fbWidth, fbHeight;
 	glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 	glViewport(0, 0, fbWidth, fbHeight);
 
 	const GLuint programID = LoadShaders("../src/shaders/vertexShader.glsl", "../src/shaders/fragmentShader.glsl");
@@ -135,7 +141,7 @@ int main()
 	// Initialize global state properties
 	state.programID = programID;
 	state.gridVisible = false;
-	state.viewMode = ViewMode::FREE;
+	state.viewMode = ViewMode::ORBIT;
 	state.controlMode = ControlMode::VIEW;
 	state.selectedPlanet = nullptr;
 	state.axisHandler = new Axis();
@@ -144,34 +150,43 @@ int main()
 
 	TextureInfo info;
 
-	auto earthMass = 5.972e29f;
-	auto earthPosition = glm::vec3(1.5e11f, 0.0f, 0.0f);
-	auto earthVelocity = glm::vec3(0.0f, 0.0f, 10000.0f);
+	// In main.cpp, replace your planet initialization code with:
+
+	// SUN (at origin)
+	auto sunMass = 1.989e29f; // kg
+	auto sunPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+	auto sunVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
+	info.useTexture = true;
+	info.texturePath = "sun.jpg";
+	info.textureSamplerID = glGetUniformLocation(programID, "textureSampler");
+	Planet sun = Planet("Sun", info, sunPosition, sunVelocity, glm::vec3(0.0f), 1.0f, sunMass);
+	planets.push_back(sun);
+
+	// EARTH
+	auto earthMass = 5.972e28f;		// kg (fixed from your 5.972e29f)
+	auto earthDistance = 1.496e11f; // meters (1 AU from sun)
+	auto earthPosition = glm::vec3(earthDistance, 0.0f, 0.0f);
+	// Calculate orbital velocity: v = sqrt(G * M_sun / r)
+	float earthOrbitalSpeed = std::sqrt(gravitationalConstant * sunMass / earthDistance);
+	auto earthVelocity = glm::vec3(0.0f, 0.0f, earthOrbitalSpeed); // ~29,780 m/s
 	info.useTexture = true;
 	info.texturePath = "earth.jpg";
-	info.textureSamplerID = glGetUniformLocation(programID, "textureSampler");
 	Planet earth = Planet("Earth", info, earthPosition, earthVelocity, glm::vec3(0.0f), 0.5f, earthMass);
 	planets.push_back(earth);
 
-	auto sunMass = 5.972e29;
-	auto sunPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-	auto sunVelocity = glm::vec3(0.0f, 0.0f, -10000.0f);
-	info.useTexture = true;
-	info.texturePath = "sun.jpg";
-	Planet sun = Planet("Sun", info, sunPosition, sunVelocity, glm::vec3(0.0f), 0.6f, sunMass);
-	planets.push_back(sun);
-
-	/*
-	auto moonMass = 7.3477e22;
-	auto MoonPosition = earthPosition + glm::vec3(3.844e8f, 0.0f, 0.0f);
-	auto moonVelocity = earthVelocity + glm::vec3(0.0f, 0.0f, 1022.0f);
+	
+	// MOON (orbiting Earth)
+	auto moonMass = 7.342e27f;	  // kg
+	auto moonDistance = 3.844e10f; // meters from Earth
+	auto moonPosition = earthPosition + glm::vec3(moonDistance, 0.0f, 0.0f);
+	// Calculate moon's orbital velocity around Earth
+	float moonOrbitalSpeed = std::sqrt(gravitationalConstant * earthMass / moonDistance);
+	auto moonVelocity = earthVelocity + glm::vec3(0.0f, 0.0f, moonOrbitalSpeed); // ~1,022 m/s relative to Earth
 	info.useTexture = true;
 	info.texturePath = "moon.jpg";
-	Planet moon = Planet("Moon", info, MoonPosition, moonVelocity, glm::vec3(0.0f), 0.2f, moonMass);
+	Planet moon = Planet("Moon", info, moonPosition, moonVelocity, glm::vec3(0.0f), 0.3f, moonMass);
 	planets.push_back(moon);
-	*/
 
-	computeMatricesFromInputs(window);
 	auto ModelMatrix = glm::mat4(1.0);
 
 	double lastTime = glfwGetTime();
@@ -203,8 +218,6 @@ int main()
 
 		skybox.render();
 
-		// drawWorldGrid(ProjectionMatrix, ViewMatrix, centerOfMass(planets));
-
 		glEnable(GL_DEPTH_TEST);
 		glUseProgram(programID);
 
@@ -235,6 +248,14 @@ int main()
 		for (Planet &planet : state.planets)
 		{
 			glm::vec3 screenCoords = planet.getPlanetScreenCoords();
+			if (state.viewMode == ViewMode::ORBIT && state.selectedPlanet == &planet)
+			{
+				screenCoords.y += planet.getRadius() * 300.0f;
+			}
+			else
+			{
+				screenCoords.y += planet.getRadius() * 2000.0f / glm::length(state.ViewMatrix[3] - glm::vec4(planet.getScaledPosition(), 1.0f));
+			}
 			printText2D(planet.name,
 						static_cast<int>(screenCoords.x),
 						static_cast<int>(screenCoords.y),
@@ -257,8 +278,6 @@ int main()
 		printText2D(modeString, WIDTH * 2 - 500, HEIGHT * 2 - 30, 20);
 		std::string frametimeString = "Frametime : " + std::to_string(frametime);
 		printText2D(frametimeString, 0, HEIGHT * 2 - 30, 30);
-		std::string controlsString = "Controls: C - Free Camera | O - Orbit Camera | G - Move Object | S - Scale Object | V - Toggle Grid";
-		printText2D(controlsString, 10, 10, 20);
 
 		glfwSwapBuffers(window);
 
