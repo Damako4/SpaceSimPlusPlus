@@ -1,11 +1,12 @@
-
 # SpaceSim++
 
-An accurate 3D gravitational physics engine in C.
-![Logo](https://i.imgur.com/Gcu3Qnx.png)
+<img src="https://i.imgur.com/Gcu3Qnx.png" width="50%" align="center">
+
 ![GitHub Tag](https://img.shields.io/github/v/tag/Damako4/SpaceSimPlusPlus?style=for-the-badge)
 ![GitHub top language](https://img.shields.io/github/languages/top/Damako4/SpaceSimPlusPlus?style=for-the-badge&color=green)
 ![GitHub Repo stars](https://img.shields.io/github/stars/Damako4/SpaceSimPlusPlus?style=for-the-badge)
+
+An accurate 3D gravitational physics engine in C.
 
 ## Features
 
