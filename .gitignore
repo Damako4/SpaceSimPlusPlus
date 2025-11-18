@@ -92,8 +92,7 @@ cmake-build-*/
 ############################
 # Tool binaries (keep source configs)
 ############################
-tools/CBFG/*.exe
-tools/CBFG/*.chm
+tools/
 
 # Keep compile_commands.json (useful for tooling)
 #!compile_commands.json
