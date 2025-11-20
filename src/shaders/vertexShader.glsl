@@ -15,6 +15,7 @@ uniform vec3 lightPosition_worldSpace;
 uniform mat4 MVP;
 uniform mat4 M;
 uniform mat4 V;
+uniform mat3 normalMatrix;
 
 void main() {
     gl_Position = MVP * vec4(vertexPosition_modelSpace, 1);
@@ -27,7 +28,6 @@ void main() {
     vec3 LightPosition_cameraspace = ( V * vec4(lightPosition_worldSpace,1)).xyz;
     lightDirection_cameraSpace = LightPosition_cameraspace + eyeDirection_cameraSpace;
 
-    normal_cameraSpace = ( V * M * vec4(vertexNormal_modelSpace,0)).xyz;
-
+    normal_cameraSpace = normalize(mat3(V) * normalMatrix * vertexNormal_modelSpace);
     UV = vertexUV;
 }

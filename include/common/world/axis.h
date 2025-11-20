@@ -4,21 +4,18 @@
 #include <glad/glad.h>
 #include <glm/matrix.hpp>
 #include <vector>
+#include <world/object.h>
 
 class Planet;
 
-class Axis {
+class Axis : public Object 
+{
 	public:
-		Axis();
+		Axis(std::shared_ptr<Shader> shaderProgram);
 
-		GLuint axisVAO;
-		GLuint axisVBO;
-		GLuint mvpID;
 		std::vector<float> axisVertices;
 
-		GLuint lineColorID;
-
-		void renderAxis(Planet& planet);
+		void render(Planet& planet);
 };
 
 #endif

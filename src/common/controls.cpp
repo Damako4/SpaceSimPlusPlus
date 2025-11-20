@@ -6,11 +6,9 @@
 #include <glm/detail/type_mat4x4.hpp>
 #include <glm/detail/type_vec.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-#include <structs.h>
-
 #include <controls.h>
 #include <planets.h>
+#include <rendering/shader.h>
 
 using namespace glm;
 
@@ -92,8 +90,8 @@ void orbitCamera(GLFWwindow *window, glm::vec3 planetPosition, float orbitRadius
 
     int width, height;
     glfwGetWindowSize(window, &width, &height);
-    state.ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(width) / float(height), 0.1f, 100.0f);
-    state.ViewMatrix = glm::lookAt(state.freeCamState.position, state.freeCamState.position + direction, up);
+    Shader::ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(width) / float(height), 0.1f, 100.0f);
+    Shader::ViewMatrix = glm::lookAt(state.freeCamState.position, state.freeCamState.position + direction, up);
 
     lastTime = currentTime;
 }
@@ -168,13 +166,13 @@ void handleStateChange(GLFWwindow *window)
             if (state.selectedPlanet != nullptr) {
                 orbitCamera(window, state.selectedPlanet->getScaledPosition(), 6.0f);
             } else {
-                orbitCamera(window, centerOfMass(state.planets), 20.0f);
+                orbitCamera(window, centerOfMass(state.planets), state.freeCamState.orbitRadius);
             }
         }
     }
     else
     {
-        orbitCamera(window, vec3(0.0f), 20.0f);
+        orbitCamera(window, vec3(0.0f), state.freeCamState.orbitRadius);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 }
@@ -219,8 +217,8 @@ void computeMatricesFromInputs(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         state.freeCamState.position -= right * deltaTime * speed;
 
-    state.ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(width) / float(height), 0.1f, 100.0f);
-    state.ViewMatrix = glm::lookAt(state.freeCamState.position, state.freeCamState.position + direction, up);
+    Shader::ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(width) / float(height), 0.1f, 100.0f);
+    Shader::ViewMatrix = glm::lookAt(state.freeCamState.position, state.freeCamState.position + direction, up);
 
     lastTime = currentTime;
 }
@@ -240,9 +238,14 @@ void centerCamera(GLFWwindow *window, std::vector<Planet> &planets)
 {
     glm::vec3 com = centerOfMass(planets);
     state.freeCamState.position = com + glm::vec3(0.0f, 5.0f, 10.0f);
-    state.ViewMatrix = glm::lookAt(
+    Shader::ViewMatrix = glm::lookAt(
         state.freeCamState.position, // Camera position orbiting planet
         com,                         // Look at planet center
         glm::vec3(0, 1, 0)           // Up vector
     );
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    state.freeCamState.orbitRadius = glm::clamp(static_cast<float>(state.freeCamState.orbitRadius + yoffset * SCROLL_SENSITIVITY), 2.0f, 50.0f);
 }

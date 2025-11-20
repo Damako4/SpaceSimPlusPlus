@@ -2,33 +2,14 @@
 
 #include <common.hpp>
 
-#include <structs.h>
 #include <world/axis.h>
 #include <controls.h>
 #include <planets.h>
 #include <tools/loadShader.hpp>
 #include <iostream>
+#include <memory>
 
-Axis::Axis() {
-    if (state.lineProgramID == 0) {
-        state.lineProgramID = LoadShaders("../src/shaders/lines/lineVertexShader.glsl", "../src/shaders/lines/lineFragmentShader.glsl");
-        
-        if (state.lineProgramID == 0) {
-            std::cerr << "Failed to load line shaders!" << std::endl;
-            return;
-        }
-    }
-    
-    // Always get uniform locations (in case they weren't set before)
-    mvpID = glGetUniformLocation(state.lineProgramID, "MVP");
-    lineColorID = glGetUniformLocation(state.lineProgramID, "lineColor");
-    
-    if (mvpID == -1) {
-        std::cerr << "Failed to get MVP uniform location!" << std::endl;
-    }
-    if (lineColorID == -1) {
-        std::cerr << "Failed to get lineColor uniform location!" << std::endl;
-    }
+Axis::Axis(std::shared_ptr<Shader> shaderProgram) : Object(shaderProgram) {
 
     axisVertices = {
         // X axis
@@ -42,16 +23,11 @@ Axis::Axis() {
         0.0f, 0.0f, 1.0f
     };
 
-    glGenVertexArrays(1, &axisVAO);
-    glGenBuffers(1, &axisVBO);
+    glGenVertexArrays(1, &i_vao);
+    glGenBuffers(1, &i_vertexBuffer);
     
-    if (axisVAO == 0 || axisVBO == 0) {
-        std::cerr << "Failed to generate VAO/VBO for axis!" << std::endl;
-        return;
-    }
-    
-    glBindVertexArray(axisVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, axisVBO);
+    glBindVertexArray(i_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, i_vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, axisVertices.size() * sizeof(float), axisVertices.data(), GL_STATIC_DRAW);
     
     glEnableVertexAttribArray(0);
@@ -61,27 +37,26 @@ Axis::Axis() {
     glBindVertexArray(0);
 }
 
-void Axis::renderAxis(Planet& planet) {
-    // Save current program so we can restore it after drawing the axis
+void Axis::render(Planet& planet) {
     GLint prevProgram = 0;
     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
-    
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), planet.getScaledPosition());
+
+    glm::mat4 model = planet.getModelMatrix();
     model = glm::scale(model, glm::vec3(planet.getRadius() * 2.0f)); // Scale axis relative to planet size
-    glm::mat4 mvp = state.ProjectionMatrix * state.ViewMatrix * model;
 
-    glUseProgram(state.lineProgramID);
-    glUniformMatrix4fv(mvpID, 1, GL_FALSE, &mvp[0][0]);
+    glUseProgram(shader->id);
 
-    glBindVertexArray(axisVAO);
-    
-    glUniform4f(lineColorID, 1.0f, 0.0f, 0.0f, 1.0f);
+    glUniformMatrix4fv(shader->uniforms["MVP"], 1, GL_FALSE, &planet.getMVP()[0][0]);
+
+    glBindVertexArray(i_vao);
+
+    glUniform4f(shader->uniforms["lineColor"], 1.0f, 0.0f, 0.0f, 1.0f);
     glDrawArrays(GL_LINES, 0, 2);
-    
-    glUniform4f(lineColorID, 0.0f, 1.0f, 0.0f, 1.0f);
+
+    glUniform4f(shader->uniforms["lineColor"], 0.0f, 1.0f, 0.0f, 1.0f);
     glDrawArrays(GL_LINES, 2, 2);
-    
-    glUniform4f(lineColorID, 0.0f, 0.0f, 1.0f, 1.0f);
+
+    glUniform4f(shader->uniforms["lineColor"], 0.0f, 0.0f, 1.0f, 1.0f);
     glDrawArrays(GL_LINES, 4, 2);
     
     glBindVertexArray(0);

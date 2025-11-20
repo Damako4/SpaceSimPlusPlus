@@ -3,10 +3,122 @@
 #include <cstring>
 
 #include <common/common.hpp>
+#include <iostream>
+#include <GLFW/glfw3.h>
+#include <tools/raycast.h>
+#include <controls.h>
+#include <tools/error.h>
 
 #define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
 #define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
 #define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
+
+void onExit() {
+	GLFWwindow* window = glfwGetCurrentContext();
+	if (window != nullptr)
+		glfwDestroyWindow(window);
+	glfwTerminate();
+}
+
+void framebufferSizeCallback(GLFWwindow *window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
+
+void initWorld(Shader defaultShader) {
+	// Enable depth test
+	glEnable(GL_DEPTH_TEST);
+	// glEnable(GL_CULL_FACE);
+	glDepthFunc(GL_LESS);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	glUseProgram(defaultShader.id);
+
+	auto lightPosition_worldSpace = glm::vec3(3.0f, -3.0f, 3.0f);
+	glUniform3fv(defaultShader.uniforms["lightPosition_worldspace"], 1, &lightPosition_worldSpace[0]);
+
+	auto lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+	glUniform3fv(defaultShader.uniforms["lightColor"], 1, &lightColor[0]);
+
+	auto lightIntensity = 20.0f;
+	glUniform1f(defaultShader.uniforms["lightIntensity"], lightIntensity);
+
+	auto ambientLightIntensity = 0.2f;
+	glUniform1f(defaultShader.uniforms["ambientLightIntensity"], ambientLightIntensity);
+
+	auto diffuseColor = glm::vec3(1.0f, 1.0f, 0.0f);
+	glUniform3fv(defaultShader.uniforms["diffuseColor"], 1, &diffuseColor[0]);
+
+	auto specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
+	glUniform3fv(defaultShader.uniforms["specularColor"], 1, &specularColor[0]);
+
+	constexpr GLint specularLobeWidth = 5;
+	glUniform1i(defaultShader.uniforms["specularLobeWidth"], specularLobeWidth);
+
+	constexpr GLfloat alpha = 1.0f;
+	glUniform1f(defaultShader.uniforms["alpha"], alpha);
+}
+
+void setup() {
+	atexit(onExit);
+
+	if (!glfwInit())
+	{
+		std::cout << "Failed to initialize GLFW" << std::endl;
+		exit(1);
+	}
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+
+	GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "Gravity Sim++", nullptr, nullptr);
+	if (window == nullptr)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		exit(1);
+	}
+	glfwMakeContextCurrent(window);
+	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_FALSE);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	// SETUP CALLBACKS
+	glfwSetMouseButtonCallback(window, raycast);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	if (const int version = gladLoadGL(); version == 0)
+	{
+		std::cerr << "Failed to initialize OpenGL context" << std::endl;
+		exit(1);
+	}
+
+	std::cout << "Loaded GLFW " << GLFW_VERSION_MAJOR << "." << GLFW_VERSION_MINOR << std::endl;
+	std::cout << "Supported OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+
+	// Used extensions: ARB_texture_view, KHR_debug
+	if constexpr (GL_EXT_texture_compression_s3tc)
+	{
+		std::cout << "Loaded GL_EXT_texture_compression_s3tc extension" << std::endl;
+	}
+	if constexpr (GL_KHR_debug)
+	{
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_KHR);
+		glDebugMessageCallback(debugCallback, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		std::cout << "Loaded GL_KHR_debug extension" << std::endl;
+		std::cout << "GL_DEBUG_OUTPUT enabled" << std::endl;
+	}
+
+	int fbWidth, fbHeight;
+	glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	glViewport(0, 0, fbWidth, fbHeight);
+}
 
 GLuint loadDDS(const char * imagepath){
 

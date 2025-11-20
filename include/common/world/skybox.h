@@ -1,19 +1,12 @@
 #ifndef SKYBOX_H
 #define SKYBOX_H
 
-#include <structs.h>
+#include <world/object.h>
 
 class SkyBox : public Object {
     public:
-    SkyBox();
+    SkyBox(std::shared_ptr<Shader> shaderProgram);
     void render();
-
-    private:
-    GLuint Vloc;
-    GLuint Ploc;
-
-    GLuint skyboxLoc;
-
 };
 
 #endif

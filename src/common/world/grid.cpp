@@ -5,19 +5,12 @@
 #include <tools/loadShader.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <planets.h>
+#include <memory>
 
-Grid::Grid(int size, float spacing) : gridSize(size), gridSpacing(spacing)
+Grid::Grid(int size, float spacing, std::shared_ptr<Shader> shaderProgram) : Object(shaderProgram), gridSize(size), gridSpacing(spacing)
 {
-    if (state.lineProgramID == 0)
-    {
-        state.lineProgramID = LoadShaders("../src/shaders/lines/lineVertexShader.glsl", "../src/shaders/lines/lineFragmentShader.glsl");
-    }
-
-    mvpID = glGetUniformLocation(state.lineProgramID, "MVP");
-    lineColorID = glGetUniformLocation(state.lineProgramID, "lineColor");
-
     float y = 0.0f;
-    int pointsPerRow = (2 * gridSize / gridSpacing) + 1;  // Number of points per row
+    int pointsPerRow = (2 * gridSize / gridSpacing) + 1;
     for (float z = -gridSize; z <= gridSize; z += gridSpacing) {
         for (float x = -gridSize; x <= gridSize; x += gridSpacing) {
             gridVertices.push_back(glm::vec3(x, y, z));
@@ -44,15 +37,15 @@ Grid::Grid(int size, float spacing) : gridSize(size), gridSpacing(spacing)
         }
     }
 
-    glGenVertexArrays(1, &VertexArrayID);
+    glGenVertexArrays(1, &i_vao);
 
-    glGenBuffers(1, &vertexBuffer);
-    glBindVertexArray(VertexArrayID);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glGenBuffers(1, &i_vertexBuffer);
+    glBindVertexArray(i_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, i_vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, gridVertices.size() * sizeof(glm::vec3), gridVertices.data(), GL_DYNAMIC_DRAW);
 
-    glGenBuffers(1, &elementBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    glGenBuffers(1, &i_elementBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, i_elementBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
@@ -90,22 +83,22 @@ void Grid::update()
         vertex.y = -totalDeformation;
     }
     
-    glBindVertexArray(VertexArrayID);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBindVertexArray(i_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, i_vertexBuffer);
     glBufferSubData(GL_ARRAY_BUFFER, 0, gridVertices.size() * sizeof(glm::vec3), gridVertices.data());
     glBindVertexArray(0);
 }
 
 void Grid::render()
-{            
-    glm::mat4 MVP = state.ProjectionMatrix * state.ViewMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-    
-    glUseProgram(state.lineProgramID);
-    glUniformMatrix4fv(mvpID, 1, GL_FALSE, &MVP[0][0]);
+{                
+    glUseProgram(shader->id);
+    glUniformMatrix4fv(shader->uniforms["MVP"], 1, GL_FALSE, &getMVP()[0][0]);
 
-    glUniform4f(lineColorID, 1, 1, 1, 1);
+    glUniform4f(shader->uniforms["lineColor"], 1, 1, 1, 1);
 
-    glBindVertexArray(VertexArrayID);
+    glBindVertexArray(i_vao);
     glDrawElements(GL_LINES, indices.size(), GL_UNSIGNED_INT, static_cast<void*>(nullptr));
     glBindVertexArray(0);
+
+    glUseProgram(0);
 }

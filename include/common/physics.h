@@ -2,7 +2,7 @@
 #define PHYSICS_H
 
 #include <vector>
-#include <structs.h>
+#include <planets.h>
 
 void updatePhysics(std::vector<Planet> &planets, double dt);
 
