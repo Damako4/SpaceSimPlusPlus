@@ -7,6 +7,9 @@
 #define NEAR_CLIP 0.1f
 #define FAR_CLIP 100.0f
 
+#define SHADOW_WIDTH 1024
+#define SHADOW_HEIGHT 1024
+
 #define SCROLL_SENSITIVITY 2.0f
 
 #define PHYSICS_SCALE_FACTOR 2.992e10

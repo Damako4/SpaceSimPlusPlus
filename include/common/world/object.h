@@ -41,7 +41,7 @@ public:
 	glm::mat4 getModelMatrix() const {
 		return glm::translate(glm::mat4(1.0f), glm::vec3(position_modelSpace));
 	}
-	glm::mat4 getNormalMatrix() const {
+	glm::mat3 getNormalMatrix() const {
 		return glm::transpose(glm::inverse(glm::mat3(getModelMatrix())));
 	}
 

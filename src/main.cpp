@@ -17,6 +17,7 @@
 #include <world/axis.h>
 #include <world/grid.h>
 #include <world/skybox.h>
+#include <rendering/light.h>
 
 std::vector<Planet> planets;
 ControlState state(planets);
@@ -24,9 +25,9 @@ ControlState state(planets);
 int main()
 {
 	setup();
-	GLFWwindow* window = glfwGetCurrentContext();
+	GLFWwindow *window = glfwGetCurrentContext();
 
-	std::shared_ptr<Shader> defaultShader = std::make_shared<Shader>("vertexShader.glsl", "fragmentShader.glsl");
+	std::shared_ptr<Shader> defaultShader = std::make_shared<Shader>("vertexShader.glsl", "fragmentShader.glsl", "geometryShader.glsl");
 	std::shared_ptr<Shader> textShader = std::make_shared<Shader>("text/textVertexShader.glsl", "text/textFragmentShader.glsl");
 	std::shared_ptr<Shader> skyboxShader = std::make_shared<Shader>("skybox/skyboxVertexShader.glsl", "skybox/skyboxFragmentShader.glsl");
 	std::shared_ptr<Shader> lineShader = std::make_shared<Shader>("lines/lineVertexShader.glsl", "lines/lineFragmentShader.glsl");
@@ -40,10 +41,16 @@ int main()
 	Axis axis(lineShader);
 	Raycast raycast(raycastShader);
 
+	glm::vec3 lightPosition = glm::vec3(2.0f, 4.0f, 3.0f);
+	glm::vec3 lightAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
+	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+	float lightIntensity = 20.0f;
+	Light light1 = Light(lightPosition, lightAmbient, lightColor, lightIntensity);
+
 	// INIT GLOBAL STATE
 	state.gridVisible = false;
 	state.viewMode = ViewMode::ORBIT;
-	state.controlMode = ControlMode::VIEW;
+	state.controlMode = ControlMode::NONE;
 	state.selectedPlanet = nullptr;
 	state.axisHandler = &axis;
 	state.raycastHandler = &raycast;
@@ -72,9 +79,8 @@ int main()
 	Planet earth = Planet("Earth", info, earthPosition, earthVelocity, glm::vec3(0.0f), 0.5f, earthMass, defaultShader);
 	planets.push_back(earth);
 
-	
 	// MOON (orbiting Earth)
-	auto moonMass = 7.342e27f;	  // kg
+	auto moonMass = 7.342e27f;	   // kg
 	auto moonDistance = 3.844e10f; // meters from Earth
 	auto moonPosition = earthPosition + glm::vec3(moonDistance, 0.0f, 0.0f);
 	// Calculate moon's orbital velocity around Earth
@@ -93,8 +99,9 @@ int main()
 	info.useTexture = true;
 	info.texturePath = "box/Wood_Crate_001_basecolor.jpg";
 	Object box("box.obj", info, defaultShader);
-	info.useTexture = false;
-	info.color = glm::vec3(0.9f);
+	info.useTexture = true;
+	info.texturePath = "floor/brick.jpg";
+	//info.color = glm::vec3(0.9f);
 	Object floor("floor.obj", info, defaultShader);
 	floor.setPosition(glm::dvec3(0.0f, -1.0f, 0.0f));
 
@@ -120,21 +127,20 @@ int main()
 
 		// WORLD RENDERING
 		skybox.render();
-		if (state.gridVisible) {
+		if (state.gridVisible)
+		{
 			worldGrid.update();
 			worldGrid.render();
 		}
 		if (state.axisHandler != nullptr && state.selectedPlanet != nullptr)
 			state.axisHandler->render(*state.selectedPlanet);
 
-
 		glEnable(GL_DEPTH_TEST);
 		glUseProgram(defaultShader->id);
-		glUniform3fv(defaultShader->uniforms["lightPosition"], 1, &glm::vec3(3.0f)[0]);
 
 		// RENDER PLANETS
+		/*
 		for (auto& planet : state.planets) { planet.render(); }
-
 
 		for (auto& planet : state.planets)
 		{
@@ -152,16 +158,28 @@ int main()
 						static_cast<int>(screenCoords.y),
 						20);
 		}
+		*/
+
+		float radius = 5.0f;
+		float x = (radius * std::cos(currentTime));
+		float z = (radius * std::sin(currentTime));
+		glm::vec3 lightPos = glm::vec3(x, 4.0f, z); // Light above the scene
+		glUniform3fv(defaultShader->uniforms["pointLights[0].position"], 1, &lightPos[0]);
 
 		box.render();
+
 		floor.render();
 
 		// TEXT RENDERING
 		std::string modeString = "View Mode: ";
 		if (state.viewMode == ViewMode::FREE)
-		{ modeString += "Free Camera"; }
+		{
+			modeString += "Free Camera";
+		}
 		else if (state.viewMode == ViewMode::ORBIT)
-		{ modeString += "Orbit Camera"; }
+		{
+			modeString += "Orbit Camera";
+		}
 		text2D.render(modeString, WIDTH * 2 - 500, HEIGHT * 2 - 30, 20);
 		std::string frametimeString = "Frametime : " + std::to_string(frametime);
 		text2D.render(frametimeString, 0, HEIGHT * 2 - 30, 30);

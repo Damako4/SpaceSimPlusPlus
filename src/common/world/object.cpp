@@ -7,10 +7,24 @@
 
 Object::Object(TextureInfo info, std::shared_ptr<Shader> shaderProgram) 
     : textureInfo(info), shader(shaderProgram) {
+    position_modelSpace = glm::dvec3(0.0);
+    vertexCount = 0;
+    i_vao = 0;
+    i_elementBuffer = 0;
+    i_vertexBuffer = 0;
+    i_uvBuffer = 0;
+    i_normalBuffer = 0;
 }
 
 Object::Object(std::shared_ptr<Shader> shaderProgram) 
     : shader(shaderProgram) {
+    position_modelSpace = glm::dvec3(0.0);
+    vertexCount = 0;
+    i_vao = 0;
+    i_elementBuffer = 0;
+    i_vertexBuffer = 0;
+    i_uvBuffer = 0;
+    i_normalBuffer = 0;
 }
 
 
@@ -78,7 +92,7 @@ void Object::render()
         glBindTexture(GL_TEXTURE_2D, textureInfo.texture);
         glUniform1i(shader->uniforms["textureSampler"], 0);
     } else {
-        glUniform3fv(shader->uniforms["diffuseColor"], 1, &textureInfo.color[0]);
+        glUniform3fv(shader->uniforms["material.diffuse"], 1, &textureInfo.color[0]);
     }
 
     glUniformMatrix4fv(shader->uniforms["MVP"], 1, GL_FALSE, &getMVP()[0][0]);

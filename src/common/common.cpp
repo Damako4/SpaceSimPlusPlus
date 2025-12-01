@@ -28,7 +28,7 @@ void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 void initWorld(Shader defaultShader) {
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
-	// glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -36,27 +36,46 @@ void initWorld(Shader defaultShader) {
 	glUseProgram(defaultShader.id);
 
 	auto lightPosition_worldSpace = glm::vec3(3.0f, -3.0f, 3.0f);
-	glUniform3fv(defaultShader.uniforms["lightPosition_worldspace"], 1, &lightPosition_worldSpace[0]);
-
 	auto lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-	glUniform3fv(defaultShader.uniforms["lightColor"], 1, &lightColor[0]);
+	auto lightAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
+	auto lightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
+	auto lightIntensity = 1.5f;
 
-	auto lightIntensity = 20.0f;
-	glUniform1f(defaultShader.uniforms["lightIntensity"], lightIntensity);
-
-	auto ambientLightIntensity = 0.2f;
-	glUniform1f(defaultShader.uniforms["ambientLightIntensity"], ambientLightIntensity);
-
-	auto diffuseColor = glm::vec3(1.0f, 1.0f, 0.0f);
-	glUniform3fv(defaultShader.uniforms["diffuseColor"], 1, &diffuseColor[0]);
-
+	auto ambientColor = glm::vec3(1.0f, 1.0f, 1.0f);
+	auto diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	auto specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
-	glUniform3fv(defaultShader.uniforms["specularColor"], 1, &specularColor[0]);
-
-	constexpr GLint specularLobeWidth = 5;
-	glUniform1i(defaultShader.uniforms["specularLobeWidth"], specularLobeWidth);
-
+	constexpr GLfloat shininess = 1.0f; // Specular Lobe Width
 	constexpr GLfloat alpha = 1.0f;
+
+	for (int i = 0; i < 4; i++) {
+        std::string base = "pointLights[" + std::to_string(i) + "].";
+        
+        if (i == 0) {
+            // First light is active
+            glUniform3fv(defaultShader.uniforms[base + "position"], 1, &glm::vec3(3.0f, -3.0f, 3.0f)[0]);
+            glUniform3fv(defaultShader.uniforms[base + "ambient"], 1, &glm::vec3(0.2f, 0.2f, 0.2f)[0]);
+            glUniform3fv(defaultShader.uniforms[base + "diffuse"], 1, &glm::vec3(1.0f, 1.0f, 1.0f)[0]);
+            glUniform3fv(defaultShader.uniforms[base + "specular"], 1, &glm::vec3(1.0f, 1.0f, 1.0f)[0]);
+			glUniform1f(defaultShader.uniforms[base + "intensity"], lightIntensity);
+            glUniform1f(defaultShader.uniforms[base + "constant"], 1.0f);
+            glUniform1f(defaultShader.uniforms[base + "linear"], 0.09f);
+            glUniform1f(defaultShader.uniforms[base + "quadratic"], 0.032f);
+        } else {
+            // Disable other lights by setting them far away with zero intensity
+            glUniform3fv(defaultShader.uniforms[base + "position"], 1, &glm::vec3(0.0f, 0.0f, 0.0f)[0]);
+            glUniform3fv(defaultShader.uniforms[base + "ambient"], 1, &glm::vec3(0.0f, 0.0f, 0.0f)[0]);
+            glUniform3fv(defaultShader.uniforms[base + "diffuse"], 1, &glm::vec3(0.0f, 0.0f, 0.0f)[0]);
+            glUniform3fv(defaultShader.uniforms[base + "specular"], 1, &glm::vec3(0.0f, 0.0f, 0.0f)[0]);
+            glUniform1f(defaultShader.uniforms[base + "constant"], 1.0f);
+            glUniform1f(defaultShader.uniforms[base + "linear"], 1.0f);
+            glUniform1f(defaultShader.uniforms[base + "quadratic"], 1.0f);
+        }
+    }
+	//glUniform1f(defaultShader.uniforms["lightIntensity"], lightIntensity);
+	glUniform3fv(defaultShader.uniforms["material.ambient"], 1, &ambientColor[0]);
+	glUniform3fv(defaultShader.uniforms["material.diffuse"], 1, &diffuseColor[0]);\
+	glUniform3fv(defaultShader.uniforms["material.specular"], 1, &specularColor[0]);
+	glUniform1f(defaultShader.uniforms["material.shininess"], shininess);
 	glUniform1f(defaultShader.uniforms["alpha"], alpha);
 }
 
@@ -129,7 +148,7 @@ GLuint loadDDS(const char * imagepath){
 	/* try to open the file */
 	fp = fopen(imagepath, "rb");
 	if (fp == NULL){
-		printf("%s could not be opened. Are you in the right directory ? Don't forget to read the FAQ !\n", imagepath); getchar();
+		printf("%s could not be opened.\n", imagepath); getchar();
 		return 0;
 	}
 

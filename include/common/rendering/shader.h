@@ -14,6 +14,7 @@ public:
     GLuint id;
     std::unordered_map<std::string, GLint> uniforms;
 
+    Shader(const std::string& vs, const std::string& fs, const std::string& gs);
     Shader(const std::string& vs, const std::string& fs);
 
     void setUniform(const std::string& name, const glm::vec3& v) { 

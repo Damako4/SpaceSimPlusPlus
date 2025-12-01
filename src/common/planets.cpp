@@ -170,12 +170,10 @@ void Planet::render()
     glUniformMatrix4fv(shader->uniforms["V"], 1, GL_FALSE, &shader->ViewMatrix[0][0]);
     glUniformMatrix3fv(shader->uniforms["normalMatrix"], 1, GL_FALSE, &normalMatrix[0][0]);
 
-    glUniform3fv(shader->uniforms["diffuseColor"], 1, &textureInfo.color[0]);
+    glUniform3fv(shader->uniforms["material.diffuse"], 1, &textureInfo.color[0]);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glUniform3fv(shader->uniforms["diffuseColor"], 1, &textureInfo.color[0]);
 
     glUniform1i(shader->uniforms["useTexture"], textureInfo.useTexture);
 
