@@ -11,9 +11,12 @@ out VS_OUT {
     vec3 normal_cameraSpace;
 } vs_out;
 
-uniform mat4 MVP;
+layout(std140) uniform Matrices {
+    mat4 V;
+    mat4 P;
+};
+
 uniform mat4 M;
-uniform mat4 V;
 uniform mat3 normalMatrix;
 
 struct PointLight {    
@@ -29,7 +32,7 @@ struct PointLight {
 };  
 
 void main() {
-    gl_Position = MVP * vec4(vertexPosition_modelSpace, 1);
+    gl_Position = P * V * M * vec4(vertexPosition_modelSpace, 1);
 
     vs_out.position_worldSpace = (M * vec4(vertexPosition_modelSpace,1)).xyz;
 

@@ -95,9 +95,7 @@ void Object::render()
         glUniform3fv(shader->uniforms["material.diffuse"], 1, &textureInfo.color[0]);
     }
 
-    glUniformMatrix4fv(shader->uniforms["MVP"], 1, GL_FALSE, &getMVP()[0][0]);
     glUniformMatrix4fv(shader->uniforms["M"], 1, GL_FALSE, &getModelMatrix()[0][0]);
-    glUniformMatrix4fv(shader->uniforms["V"], 1, GL_FALSE, &shader->ViewMatrix[0][0]);
     glUniformMatrix3fv(shader->uniforms["normalMatrix"], 1, GL_FALSE, &getNormalMatrix()[0][0]);
 
     glBindVertexArray(i_vao);

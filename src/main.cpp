@@ -27,11 +27,13 @@ int main()
 	setup();
 	GLFWwindow *window = glfwGetCurrentContext();
 
-	std::shared_ptr<Shader> defaultShader = std::make_shared<Shader>("vertexShader.glsl", "fragmentShader.glsl", "geometryShader.glsl");
-	std::shared_ptr<Shader> textShader = std::make_shared<Shader>("text/textVertexShader.glsl", "text/textFragmentShader.glsl");
-	std::shared_ptr<Shader> skyboxShader = std::make_shared<Shader>("skybox/skyboxVertexShader.glsl", "skybox/skyboxFragmentShader.glsl");
-	std::shared_ptr<Shader> lineShader = std::make_shared<Shader>("lines/lineVertexShader.glsl", "lines/lineFragmentShader.glsl");
-	std::shared_ptr<Shader> raycastShader = std::make_shared<Shader>("raycasting/rayVertexShader.glsl", "raycasting/rayFragmentShader.glsl");
+	Shader::initMatricesUBO();
+	std::shared_ptr<Shader> defaultShader = std::make_shared<Shader>("vertexShader.vert", "fragmentShader.frag", "geometryShader.geom");
+	std::shared_ptr<Shader> textShader = std::make_shared<Shader>("text/textVertexShader.vert", "text/textFragmentShader.frag");
+	std::shared_ptr<Shader> skyboxShader = std::make_shared<Shader>("skybox/skyboxVertexShader.vert", "skybox/skyboxFragmentShader.frag");
+	std::shared_ptr<Shader> lineShader = std::make_shared<Shader>("lines/lineVertexShader.vert", "lines/lineFragmentShader.frag");
+	std::shared_ptr<Shader> raycastShader = std::make_shared<Shader>("raycasting/rayVertexShader.vert", "raycasting/rayFragmentShader.frag");
+	std::shared_ptr<Shader> normalShader = std::make_shared<Shader>("normals/normalVertexShader.vert", "normals/normalFragmentShader.frag", "normals/normalGeometryShader.geom");
 
 	// INIT WORLD
 	initWorld(*defaultShader);
@@ -124,6 +126,7 @@ int main()
 		}
 		updatePhysics(planets, dt);
 		handleStateChange(window);
+		Shader::updateMatricesUBO();
 
 		// WORLD RENDERING
 		skybox.render();
@@ -170,6 +173,16 @@ int main()
 
 		floor.render();
 
+		/*
+		glUseProgram(normalShader->id);
+		box.setShader(normalShader);
+		box.render();
+		floor.setShader(normalShader);
+		floor.render();
+		box.setShader(defaultShader);
+		floor.setShader(defaultShader);
+		*/
+		
 		// TEXT RENDERING
 		std::string modeString = "View Mode: ";
 		if (state.viewMode == ViewMode::FREE)

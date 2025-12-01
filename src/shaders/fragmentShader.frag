@@ -10,7 +10,11 @@ out vec4 color;  // Use this, not FragColor
 //uniform float lightIntensity;
 //uniform float ambientLightIntensity;
 uniform float alpha;
-uniform mat4 V;
+
+layout(std140) uniform Matrices {
+    mat4 V;
+    mat4 P;
+};
 
 uniform sampler2D textureSampler;
 uniform bool useTexture;

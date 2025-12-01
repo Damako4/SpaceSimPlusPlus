@@ -158,6 +158,8 @@ void Planet::generateSphereVertices(float radius, int sectorCount, int stackCoun
 
 void Planet::render()
 {
+    // TODO: Use the object render method
+    // Object::render();
     glUseProgram(shader->id);
 
     glm::mat4 ObjectModelMatrix = glm::scale(getModelMatrix(), glm::vec3(radius));

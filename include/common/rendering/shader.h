@@ -17,6 +17,10 @@ public:
     Shader(const std::string& vs, const std::string& fs, const std::string& gs);
     Shader(const std::string& vs, const std::string& fs);
 
+    static GLuint matricesUBO;
+    static void initMatricesUBO();
+    static void updateMatricesUBO();
+
     void setUniform(const std::string& name, const glm::vec3& v) { 
         glUniform3fv(uniforms[name], 1, &v[0]);
     }

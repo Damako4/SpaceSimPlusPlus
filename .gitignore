@@ -18,7 +18,6 @@ Thumbs.db
 # C/C++ build artifacts
 ############################
 *.o
-*.obj
 *.lo
 *.la
 *.a

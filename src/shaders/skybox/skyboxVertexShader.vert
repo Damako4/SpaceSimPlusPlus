@@ -3,8 +3,10 @@ layout (location = 0) in vec3 aPos;
 
 out vec3 TexCoords;
 
-uniform mat4 P;
-uniform mat4 V;
+layout (std140) uniform Matrices {
+    mat4 P;
+    mat4 V;
+};
 
 void main()
 {

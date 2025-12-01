@@ -22,7 +22,6 @@ public:
 	Object(TextureInfo textureInfo, std::shared_ptr<Shader> shaderProgram);
 	Object(std::shared_ptr<Shader> shaderProgram);
 
-
 	virtual ~Object() = default;
 
 	virtual void render();
@@ -31,6 +30,7 @@ public:
     void setPosition(const glm::dvec3& position) { position_modelSpace = position; }
     void setColor(const glm::vec3& color);
     void setTexture(const TextureInfo& textureInfo);
+	void setShader(std::shared_ptr<Shader> newShader) { shader->id = newShader->id; }
 
 	// GETTERS
 	glm::dvec3 getPosition() const { return position_modelSpace; }
