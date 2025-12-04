@@ -7,8 +7,8 @@
 #define NEAR_CLIP 0.1f
 #define FAR_CLIP 100.0f
 
-#define SHADOW_WIDTH 1024
-#define SHADOW_HEIGHT 1024
+#define SHADOW_WIDTH 2048
+#define SHADOW_HEIGHT 2048
 
 #define SCROLL_SENSITIVITY 2.0f
 
@@ -27,6 +27,7 @@ const double lightConstant = 3e8;
 #include <planets.h>
 #include <world/axis.h>
 #include <types.h>
+#include "rendering/light.h"
 
 GLuint loadBMP_custom(const char *filepath);
 GLuint loadDDS(const char *filepath);
@@ -40,16 +41,20 @@ struct ControlState {
 	ViewMode viewMode;
 	ControlMode controlMode;
 	bool gridVisible = true;
+	bool normalsVisible = false;
 	std::vector<Planet>& planets;
 	Planet* selectedPlanet;
+
+	Light lights[8];
+	std::vector<Object>& objects;
 
 	Axis* axisHandler;
 	Raycast* raycastHandler;
 
 	CameraState freeCamState;
 
-	ControlState(std::vector<Planet>& planet_ref) : planets(planet_ref) {
-		
+	ControlState(std::vector<Planet>& planet_ref, std::vector<Object>& object_ref) : planets(planet_ref), objects(object_ref) {
+
 	}
 };
 

@@ -18,9 +18,13 @@
 #include <world/grid.h>
 #include <world/skybox.h>
 #include <rendering/light.h>
+#include <rendering/render.h>
+#include <rendering/shadow.h>
+#include <rendering/debugQuad.h>
 
 std::vector<Planet> planets;
-ControlState state(planets);
+std::vector<Object> objects;
+ControlState state(planets, objects);
 
 int main()
 {
@@ -34,6 +38,29 @@ int main()
 	std::shared_ptr<Shader> lineShader = std::make_shared<Shader>("lines/lineVertexShader.vert", "lines/lineFragmentShader.frag");
 	std::shared_ptr<Shader> raycastShader = std::make_shared<Shader>("raycasting/rayVertexShader.vert", "raycasting/rayFragmentShader.frag");
 	std::shared_ptr<Shader> normalShader = std::make_shared<Shader>("normals/normalVertexShader.vert", "normals/normalFragmentShader.frag", "normals/normalGeometryShader.geom");
+	ShadowMap::shadowShader = std::make_shared<Shader>("shadows/shadowVertexShader.vert", "shadows/shadowFragmentShader.frag");
+	std::shared_ptr<Shader> debugDepthShader = std::make_shared<Shader>("debug/debugDepthVertex.vert", "debug/debugDepthFragment.frag");
+
+	ShadowMap shadowMap(SHADOW_WIDTH, SHADOW_HEIGHT);
+	DebugQuad debugQuad(debugDepthShader);
+
+	// Bind UBO to binding point 0 for all shaders that use the Matrices block
+	GLuint matricesBlockIndex;
+	
+	matricesBlockIndex = glGetUniformBlockIndex(defaultShader->id, "Matrices");
+	if (matricesBlockIndex != GL_INVALID_INDEX) {
+		glUniformBlockBinding(defaultShader->id, matricesBlockIndex, 0);
+	}
+	
+	matricesBlockIndex = glGetUniformBlockIndex(skyboxShader->id, "Matrices");
+	if (matricesBlockIndex != GL_INVALID_INDEX) {
+		glUniformBlockBinding(skyboxShader->id, matricesBlockIndex, 0);
+	}
+	
+	matricesBlockIndex = glGetUniformBlockIndex(normalShader->id, "Matrices");
+	if (matricesBlockIndex != GL_INVALID_INDEX) {
+		glUniformBlockBinding(normalShader->id, matricesBlockIndex, 0);
+	}
 
 	// INIT WORLD
 	initWorld(*defaultShader);
@@ -48,7 +75,8 @@ int main()
 	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	float lightIntensity = 20.0f;
 	Light light1 = Light(lightPosition, lightAmbient, lightColor, lightIntensity);
-
+	state.lights[0] = light1;
+	
 	// INIT GLOBAL STATE
 	state.gridVisible = false;
 	state.viewMode = ViewMode::ORBIT;
@@ -59,6 +87,10 @@ int main()
 
 	TextureInfo info;
 
+	// Reserve space for planets and objects to prevent vector reallocation
+	planets.reserve(10);
+	objects.reserve(10);
+
 	// SUN (at origin)
 	auto sunMass = 1.989e29f; // kg
 	auto sunPosition = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -66,8 +98,7 @@ int main()
 	info.useTexture = true;
 	info.texturePath = "sun.jpg";
 	info.textureSamplerID = defaultShader->uniforms["textureSampler"];
-	Planet sun = Planet("Sun", info, sunPosition, sunVelocity, glm::vec3(0.0f), 1.0f, sunMass, defaultShader);
-	planets.push_back(sun);
+	planets.emplace_back("Sun", info, sunPosition, sunVelocity, glm::vec3(0.0f), 1.0f, sunMass, defaultShader);
 
 	// EARTH
 	auto earthMass = 5.972e28f;		// kg (fixed from your 5.972e29f)
@@ -78,8 +109,7 @@ int main()
 	auto earthVelocity = glm::vec3(0.0f, 0.0f, earthOrbitalSpeed); // ~29,780 m/s
 	info.useTexture = true;
 	info.texturePath = "earth.jpg";
-	Planet earth = Planet("Earth", info, earthPosition, earthVelocity, glm::vec3(0.0f), 0.5f, earthMass, defaultShader);
-	planets.push_back(earth);
+	planets.emplace_back("Earth", info, earthPosition, earthVelocity, glm::vec3(0.0f), 0.5f, earthMass, defaultShader);
 
 	// MOON (orbiting Earth)
 	auto moonMass = 7.342e27f;	   // kg
@@ -90,8 +120,7 @@ int main()
 	auto moonVelocity = earthVelocity + glm::vec3(0.0f, 0.0f, moonOrbitalSpeed); // ~1,022 m/s relative to Earth
 	info.useTexture = true;
 	info.texturePath = "moon.jpg";
-	Planet moon = Planet("Moon", info, moonPosition, moonVelocity, glm::vec3(0.0f), 0.3f, moonMass, defaultShader);
-	planets.push_back(moon);
+	planets.emplace_back("Moon", info, moonPosition, moonVelocity, glm::vec3(0.0f), 0.3f, moonMass, defaultShader);
 
 	double lastTime = glfwGetTime();
 	double lastFPSTime = glfwGetTime();
@@ -100,12 +129,12 @@ int main()
 
 	info.useTexture = true;
 	info.texturePath = "box/Wood_Crate_001_basecolor.jpg";
-	Object box("box.obj", info, defaultShader);
+	state.objects.emplace_back("box.obj", info, defaultShader);
+	
 	info.useTexture = true;
 	info.texturePath = "floor/brick.jpg";
-	//info.color = glm::vec3(0.9f);
-	Object floor("floor.obj", info, defaultShader);
-	floor.setPosition(glm::dvec3(0.0f, -1.0f, 0.0f));
+	state.objects.emplace_back("floor.obj", info, defaultShader);
+	state.objects.back().setPosition(glm::dvec3(0.0f, -1.0f, 0.0f));
 
 	do
 	{
@@ -139,50 +168,50 @@ int main()
 			state.axisHandler->render(*state.selectedPlanet);
 
 		glEnable(GL_DEPTH_TEST);
-		glUseProgram(defaultShader->id);
-
-		// RENDER PLANETS
-		/*
-		for (auto& planet : state.planets) { planet.render(); }
-
-		for (auto& planet : state.planets)
-		{
-			glm::vec3 screenCoords = planet.getPlanetScreenCoords();
-			if (state.viewMode == ViewMode::ORBIT && state.selectedPlanet == &planet)
-			{
-				screenCoords.y += planet.getRadius() * 300.0f;
-			}
-			else
-			{
-				screenCoords.y += planet.getRadius() * 2000.0f / glm::length(Shader::ViewMatrix[3] - glm::vec4(planet.getScaledPosition(), 1.0f));
-			}
-			text2D.render(planet.name,
-						static_cast<int>(screenCoords.x),
-						static_cast<int>(screenCoords.y),
-						20);
-		}
-		*/
 
 		float radius = 5.0f;
 		float x = (radius * std::cos(currentTime));
 		float z = (radius * std::sin(currentTime));
-		glm::vec3 lightPos = glm::vec3(x, 4.0f, z); // Light above the scene
-		glUniform3fv(defaultShader->uniforms["pointLights[0].position"], 1, &lightPos[0]);
+		glm::vec3 lightPos = glm::vec3(3.0f, 3.0f, 3.0f); // Light above the scene
+		state.lights[0].position = lightPos;
 
-		box.render();
+		shadowMap.renderShadowMap();
 
-		floor.render();
+		auto [fbWidth, fbHeight] = getViewportSize();
+		glViewport(0, 0, fbWidth, fbHeight);
 
-		/*
-		glUseProgram(normalShader->id);
-		box.setShader(normalShader);
-		box.render();
-		floor.setShader(normalShader);
-		floor.render();
-		box.setShader(defaultShader);
-		floor.setShader(defaultShader);
-		*/
+		glUseProgram(defaultShader->id);
 		
+		glUniform3fv(defaultShader->uniforms["pointLights[0].position"], 1, &lightPos[0]);
+		
+		GLint lightSpaceMatrixLoc = defaultShader->getUniform("lightSpaceMatrix");
+		if (lightSpaceMatrixLoc != -1) {
+			glm::mat4 lightSpaceMat = shadowMap.getLightSpaceMatrix();
+			glUniformMatrix4fv(lightSpaceMatrixLoc, 1, GL_FALSE, &lightSpaceMat[0][0]);
+		}
+		
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthTexture());
+		GLint depthMapLoc = defaultShader->getUniform("depthMap");
+		if (depthMapLoc != -1) {
+			glUniform1i(depthMapLoc, 1); // Tell shader depthMap is in texture unit 1
+		}
+
+		renderScene();
+		
+		if (state.normalsVisible)
+		{
+			glUseProgram(normalShader->id);
+			for (Object& obj : state.objects) {
+				obj.renderNormals(normalShader);
+			}
+		}
+
+		// Render depth map to screen for debugging
+		glDisable(GL_DEPTH_TEST);
+		debugQuad.render(shadowMap.getDepthTexture());
+		glEnable(GL_DEPTH_TEST);
+
 		// TEXT RENDERING
 		std::string modeString = "View Mode: ";
 		if (state.viewMode == ViewMode::FREE)

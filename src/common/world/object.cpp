@@ -14,6 +14,7 @@ Object::Object(TextureInfo info, std::shared_ptr<Shader> shaderProgram)
     i_vertexBuffer = 0;
     i_uvBuffer = 0;
     i_normalBuffer = 0;
+    textureInfo.texture = 0;  // Initialize texture ID
 }
 
 Object::Object(std::shared_ptr<Shader> shaderProgram) 
@@ -25,6 +26,8 @@ Object::Object(std::shared_ptr<Shader> shaderProgram)
     i_vertexBuffer = 0;
     i_uvBuffer = 0;
     i_normalBuffer = 0;
+    textureInfo.texture = 0;  // Initialize texture ID
+    textureInfo.useTexture = false;  // Initialize useTexture flag
 }
 
 
@@ -81,27 +84,77 @@ Object::Object(std::string modelP, TextureInfo texInfo, std::shared_ptr<Shader> 
     glBindVertexArray(0);
 }
 
+void Object::renderDepth(std::shared_ptr<Shader> depthShader) {    
+    GLint mLoc = depthShader->getUniform("M");
+    if (mLoc != -1) {
+        glUniformMatrix4fv(mLoc, 1, GL_FALSE, &getModelMatrix()[0][0]);
+    }
+
+    glBindVertexArray(i_vao);
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+    glBindVertexArray(0);
+}
+
+void Object::renderNormals(std::shared_ptr<Shader> normalShader) {
+    // Don't call glUseProgram - caller manages that
+    
+    GLint mLoc = normalShader->getUniform("M");
+    if (mLoc != -1) {
+        glUniformMatrix4fv(mLoc, 1, GL_FALSE, &getModelMatrix()[0][0]);
+    }
+
+    glBindVertexArray(i_vao);
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+    glBindVertexArray(0);
+}
+
 void Object::render()
 {
     glUseProgram(shader->id);
 
-    glUniform1i(shader->uniforms["useTexture"], textureInfo.useTexture);
-
-    if (textureInfo.useTexture && textureInfo.texture != 0) {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureInfo.texture);
-        glUniform1i(shader->uniforms["textureSampler"], 0);
-    } else {
-        glUniform3fv(shader->uniforms["material.diffuse"], 1, &textureInfo.color[0]);
+    auto useTextureIt = shader->getUniform("useTexture");
+    if (useTextureIt != -1) {
+        glUniform1i(useTextureIt, textureInfo.useTexture);
     }
 
-    glUniformMatrix4fv(shader->uniforms["M"], 1, GL_FALSE, &getModelMatrix()[0][0]);
-    glUniformMatrix3fv(shader->uniforms["normalMatrix"], 1, GL_FALSE, &getNormalMatrix()[0][0]);
+    if (textureInfo.useTexture && textureInfo.texture != 0) {
+        auto texSamplerIt = shader->getUniform("textureSampler");
+        if (texSamplerIt != -1) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureInfo.texture);
+            glUniform1i(texSamplerIt, 0);
+        }
+    } else {
+        auto diffuseIt = shader->getUniform("material.diffuse");
+        if (diffuseIt != -1) {
+            glUniform3fv(diffuseIt, 1, &textureInfo.color[0]);
+        }
+    }
+
+    auto mIt = shader->getUniform("M");
+    if (mIt != -1) {
+        glUniformMatrix4fv(mIt, 1, GL_FALSE, &getModelMatrix()[0][0]);
+    }
+
+    auto normalMatrixIt = shader->getUniform("normalMatrix");
+    if (normalMatrixIt != -1) {
+        glUniformMatrix3fv(normalMatrixIt, 1, GL_FALSE, &getNormalMatrix()[0][0]);
+    }
 
     glBindVertexArray(i_vao);
 
     glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 
     glBindVertexArray(0);
-    glUseProgram(0);
+}
+
+Object::~Object() {
+    glDeleteVertexArrays(1, &i_vao);
+    glDeleteBuffers(1, &i_vertexBuffer);
+    glDeleteBuffers(1, &i_uvBuffer);
+    glDeleteBuffers(1, &i_normalBuffer);
+    glDeleteBuffers(1, &i_elementBuffer);
+    if (textureInfo.texture != 0) {
+        glDeleteTextures(1, &textureInfo.texture);
+    }
 }

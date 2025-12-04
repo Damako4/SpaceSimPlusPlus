@@ -44,7 +44,7 @@ void initWorld(Shader defaultShader) {
 	auto ambientColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	auto diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	auto specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
-	constexpr GLfloat shininess = 1.0f; // Specular Lobe Width
+	constexpr GLfloat shininess = 32.0f; // Specular Lobe Width - higher = tighter/shinier
 	constexpr GLfloat alpha = 1.0f;
 
 	for (int i = 0; i < 4; i++) {

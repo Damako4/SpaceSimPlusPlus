@@ -9,6 +9,7 @@
 #include <controls.h>
 #include <planets.h>
 #include <rendering/shader.h>
+#include <rendering/render.h>
 
 using namespace glm;
 
@@ -88,9 +89,8 @@ void orbitCamera(GLFWwindow *window, glm::vec3 planetPosition, float orbitRadius
 
     float FoV = initialFoV;
 
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
-    Shader::ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(width) / float(height), 0.1f, 100.0f);
+    auto [fbWidth, fbHeight] = getViewportSize();
+    Shader::ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(fbWidth) / float(fbHeight), 0.1f, 100.0f);
     Shader::ViewMatrix = glm::lookAt(state.freeCamState.position, state.freeCamState.position + direction, up);
 
     lastTime = currentTime;
@@ -103,6 +103,10 @@ void handleStateChange(GLFWwindow *window)
     {
         state.controlMode = ControlMode::VIEW;
         state.viewMode = ViewMode::ORBIT;
+    }
+    if (isKeyPressedOnce(GLFW_KEY_N, window))
+    {
+        state.normalsVisible = !state.normalsVisible;
     }
     if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
     {
@@ -217,7 +221,9 @@ void computeMatricesFromInputs(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         state.freeCamState.position -= right * deltaTime * speed;
 
-    Shader::ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(width) / float(height), 0.1f, 100.0f);
+    // Use framebuffer size for proper aspect ratio on high-DPI displays
+    auto [fbWidth, fbHeight] = getViewportSize();
+    Shader::ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(fbWidth) / float(fbHeight), 0.1f, 100.0f);
     Shader::ViewMatrix = glm::lookAt(state.freeCamState.position, state.freeCamState.position + direction, up);
 
     lastTime = currentTime;
@@ -238,6 +244,9 @@ void centerCamera(GLFWwindow *window, std::vector<Planet> &planets)
 {
     glm::vec3 com = centerOfMass(planets);
     state.freeCamState.position = com + glm::vec3(0.0f, 5.0f, 10.0f);
+    auto [fbWidth, fbHeight] = getViewportSize();
+    Shader::ProjectionMatrix = glm::perspective(glm::radians(initialFoV), float(fbWidth) / float(fbHeight), 0.1f, 100.0f);
+
     Shader::ViewMatrix = glm::lookAt(
         state.freeCamState.position, // Camera position orbiting planet
         com,                         // Look at planet center

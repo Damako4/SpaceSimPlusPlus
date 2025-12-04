@@ -99,6 +99,7 @@ SkyBox::SkyBox(std::shared_ptr<Shader> shaderProgram) : Object(shaderProgram) {
 }
 
 void SkyBox::render() {
+    glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
     
     glUseProgram(shader->id);
@@ -106,16 +107,16 @@ void SkyBox::render() {
     glBindVertexArray(i_vao);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureInfo.texture);
 
-    glUniformMatrix4fv(shader->uniforms["P"], 1, GL_FALSE, &Shader::ProjectionMatrix[0][0]);
-    glm::mat4 view = glm::mat4(glm::mat3(Shader::ViewMatrix));
-    glUniformMatrix4fv(shader->uniforms["V"], 1, GL_FALSE, &view[0][0]);
-
-    glUniform1i(shader->uniforms["skybox"], 0);
+    auto skybox = shader->getUniform("skybox");
+    if (skybox != -1) {
+        glUniform1i(skybox, 0);
+    }
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 
     glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
 
     glUseProgram(0);
 }

@@ -9,6 +9,7 @@ out VS_OUT {
     vec3 position_worldSpace;
     vec3 eyeDirection_cameraSpace;
     vec3 normal_cameraSpace;
+    vec4 position_lightSpace;
 } vs_out;
 
 layout(std140) uniform Matrices {
@@ -18,6 +19,7 @@ layout(std140) uniform Matrices {
 
 uniform mat4 M;
 uniform mat3 normalMatrix;
+uniform mat4 lightSpaceMatrix;
 
 struct PointLight {    
     vec3 position;
@@ -35,6 +37,8 @@ void main() {
     gl_Position = P * V * M * vec4(vertexPosition_modelSpace, 1);
 
     vs_out.position_worldSpace = (M * vec4(vertexPosition_modelSpace,1)).xyz;
+
+    vs_out.position_lightSpace = lightSpaceMatrix * vec4(vs_out.position_worldSpace, 1);
 
     vec3 vertexPosition_cameraspace = ( V * M * vec4(vertexPosition_modelSpace,1)).xyz;
     vs_out.eyeDirection_cameraSpace = vec3(0,0,0) - vertexPosition_cameraspace;

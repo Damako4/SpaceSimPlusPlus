@@ -30,6 +30,14 @@ public:
     void setUniform(const std::string& name, const glm::mat3& v) {
         glUniformMatrix3fv(uniforms[name], 1, GL_FALSE, &v[0][0]);
     }
+
+    GLuint getUniform(const std::string& name) {
+        if (uniforms.find(name) != uniforms.end()) {
+            return uniforms[name];
+        } else {
+            return -1;
+        }
+    }
 };
 
 

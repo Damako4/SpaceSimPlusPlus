@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec3 vertexPosition_modelSpace;
 
+// TODO :  replace with uniform block
 uniform mat4 MVP;
 
 void main(){
